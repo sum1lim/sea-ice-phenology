@@ -1,0 +1,9 @@
+import ee
+import argparse
+
+def main():
+    ee.Authenticate()
+
+
+if __name__ == "__main__":
+    main()

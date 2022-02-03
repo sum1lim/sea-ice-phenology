@@ -11,6 +11,7 @@ setup(
     packages=["sea_ice_phenology"],
     include_package_data=True,
     scripts="""
+        ./scripts/authenticate
         ./scripts/get_timeseries
     """.split(),
 )
