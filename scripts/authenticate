@@ -1,6 +1,7 @@
 import ee
 import argparse
 
+
 def main():
     ee.Authenticate()
 
