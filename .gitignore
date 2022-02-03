@@ -1,0 +1,6 @@
+.DS_Store
+sea_ice_phenology.egg-info
+__pycache__
+venv
+.vscode
+environment.yml
