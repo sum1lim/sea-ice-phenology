@@ -41,7 +41,7 @@ def main(args):
 
     modis = (
         ee.ImageCollection("MODIS/006/MOD09GQ")
-        .filterDate("2022-01-01", "2022-01-31")
+        .filterDate(args.start_date, args.end_date)
         .filterBounds(roi)
         .select(["sur_refl_b01", "sur_refl_b02"], ["B1", "B2"])
     )
@@ -57,7 +57,7 @@ def main(args):
     B2_dict = id_img_dict(modis, roi, "B2")
     with open("./data/output.csv", "w") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(["id", "B1", "B2"])
+        writer.writerow(["system:time_start", "B1", "B2"])
         for k, v in qa_dict.items():
             if getQABits(v, 0, 1) == 0:
                 writer.writerow([k, B1_dict[k], B2_dict[k]])
@@ -71,6 +71,18 @@ if __name__ == "__main__":
         nargs=2,
         type=float,
         help="Area of Interest (AOI) defined by lon, lat coordiates",
+        required=True,
+    )
+    parser.add_argument(
+        "--start-date",
+        type=str,
+        help="YYYY-MM-DD",
+        required=True,
+    )
+    parser.add_argument(
+        "--end-date",
+        type=str,
+        help="YYYY-MM-DD",
         required=True,
     )
 
