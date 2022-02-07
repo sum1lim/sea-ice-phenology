@@ -61,6 +61,8 @@ def main(args):
         for k, v in qa_dict.items():
             if getQABits(v, 0, 1) == 0:
                 writer.writerow([k, B1_dict[k], B2_dict[k]])
+            else:
+                writer.writerow([k, B1_dict[k], ""])
 
 
 if __name__ == "__main__":
