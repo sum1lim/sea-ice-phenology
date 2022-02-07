@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 import argparse
+import pandas as pd
 
 
 def main(args):
-    None
+    ts_df = pd.read_csv(args.input)
+    ts_df["system:time_start"] = pd.to_datetime(ts_df["system:time_start"])
+
+    print(ts_df)
 
 
 if __name__ == "__main__":
