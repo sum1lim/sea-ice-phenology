@@ -13,5 +13,6 @@ setup(
     scripts="""
         ./scripts/authenticate
         ./scripts/get_timeseries
+        ./scripts/interpolate
     """.split(),
 )
