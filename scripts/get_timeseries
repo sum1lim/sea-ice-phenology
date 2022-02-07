@@ -57,7 +57,7 @@ def main(args):
     B2_dict = id_img_dict(modis, roi, "B2")
     with open("./data/output.csv", "w") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(["id", "B1", "B2"])
+        writer.writerow(["system:time_start", "B1", "B2"])
         for k, v in qa_dict.items():
             if getQABits(v, 0, 1) == 0:
                 writer.writerow([k, B1_dict[k], B2_dict[k]])
