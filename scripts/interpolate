@@ -1,13 +1,24 @@
 #!/usr/bin/env python3
 import argparse
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 
 def main(args):
-    ts_df = pd.read_csv(args.input)
+    ts_df = pd.read_csv(args.input, thousands=",")
     ts_df["system:time_start"] = pd.to_datetime(ts_df["system:time_start"])
+    ts_df.index = ts_df["system:time_start"]
+    del ts_df["system:time_start"]
 
-    print(ts_df)
+    for band in ts_df.columns:
+        ts_df["x"] = ts_df.index
+        sns.scatterplot(data=ts_df, x="x", y=band)
+        plt.show()
+        ts_df[band] = ts_df[band].interpolate()
+        sns.scatterplot(data=ts_df, x="x", y=band)
+        plt.show()
+        del ts_df["x"]
 
 
 if __name__ == "__main__":

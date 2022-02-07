@@ -10,7 +10,7 @@ def getQABits(number, start, end):
     bit_mask = 0
     while i < 16:
         if not i < start and not i > end:
-            bit_mask += 2**i
+            bit_mask += 2 ** i
         i += 1
 
     return number & bit_mask
@@ -61,7 +61,7 @@ def main(args):
             if getQABits(v, 0, 1) == 0:
                 writer.writerow([k.replace("_", "-"), B1_dict[k], B2_dict[k]])
             else:
-                writer.writerow([k.replace("_", "-"), B1_dict[k], ""])
+                writer.writerow([k.replace("_", "-"), "", ""])
 
 
 if __name__ == "__main__":
