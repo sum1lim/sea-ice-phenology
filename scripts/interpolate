@@ -12,13 +12,18 @@ def main(args):
     del ts_df["system:time_start"]
 
     for band in ts_df.columns:
-        ts_df["Date"] = ts_df.index
-        sns.scatterplot(data=ts_df, x="Date", y=band)
+        first_valid = ts_df[band][ts_df[band].notnull()].index[0]
+        last_valid = ts_df[band][ts_df[band].notnull()].index[-1]
+        tmp = ts_df.loc[first_valid:last_valid]
+
+        tmp["Date"] = tmp.index
+        sns.scatterplot(data=tmp, x="Date", y=band)
         plt.show()
-        ts_df[band] = ts_df[band].interpolate()
-        sns.scatterplot(data=ts_df, x="Date", y=band)
+        tmp[band] = tmp[band].interpolate("linear", order=5)
+        sns.scatterplot(data=tmp, x="Date", y=band)
         plt.show()
-        del ts_df["Date"]
+
+        ts_df[band] = tmp[band]
 
     ts_df.to_csv(f"{'.'.join(args.input.split('.')[:-1])}_interpolate.csv")
 
