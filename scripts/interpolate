@@ -15,10 +15,10 @@ def main(args):
         first_valid = ts_df[band][ts_df[band].notnull()].index[0]
         last_valid = ts_df[band][ts_df[band].notnull()].index[-1]
         tmp = ts_df.loc[first_valid:last_valid].copy()
-
         tmp["Date"] = tmp.index
-        sns.scatterplot(data=tmp, x="Date", y=band)
-        plt.show()
+        tmp["mask"] = tmp[band].isnull()
+        tmp["mask"].mask(tmp["mask"] == True, "Interpolated", inplace=True)
+        tmp["mask"].mask(tmp["mask"] == False, "Original", inplace=True)
 
         tmp[band] = tmp[band].interpolate(
             "slinear", limit_direction="both", limit_area="inside", limit=1
@@ -36,7 +36,9 @@ def main(args):
         tmp[band].mask(tmp[band] < Q1 - 1.5 * IQR, None, inplace=True)
         tmp[band].mask(tmp[band] > Q3 + 1.5 * IQR, None, inplace=True)
 
-        sns.scatterplot(data=tmp, x="Date", y=band)
+        _, _ = plt.subplots(figsize=(20, 4))
+        sns.scatterplot(data=tmp, x="Date", y=band, hue="mask", style="mask")
+        plt.grid()
         plt.show()
 
         ts_df[f"{band}_interpolate"] = tmp[band]
