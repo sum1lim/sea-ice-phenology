@@ -2,3 +2,4 @@ earthengine-api
 tqdm
 pandas
 seaborn
+scikit-learn

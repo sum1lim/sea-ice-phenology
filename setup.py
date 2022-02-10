@@ -15,5 +15,6 @@ setup(
         ./scripts/authenticate
         ./scripts/get_timeseries
         ./scripts/interpolate
+        ./scripts/phenology
     """.split(),
 )
