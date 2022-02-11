@@ -1,25 +1,73 @@
 #!/usr/bin/env python3
 import argparse
+from difflib import context_diff
 import pandas as pd
 import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
+from scipy.stats import pearsonr
 
 
 def main(args):
     ts_df = pd.read_csv(args.input, thousands=",")
+    ts_df["system:time_start"] = pd.to_datetime(ts_df["system:time_start"])
+    ts_df.index = ts_df["system:time_start"]
+    del ts_df["system:time_start"]
 
     for band in ts_df.columns:
         if band.endswith("_interpolate"):
+            coefficient_li = [None for _ in range(30)]
+            tmp = ts_df.copy()
+            tmp["Date"] = tmp.index
+
             idx = 30
-            while idx < ts_df.shape[0]:
-                subset = ts_df[idx - 30 : idx][band].dropna()
-                if subset.shape[0] == 30:
-                    reg = LinearRegression().fit(
-                        np.array([subset.index]).reshape(-1, 1), subset
+            while idx < tmp.shape[0]:
+                subset_1 = tmp[idx - 30 : idx][band].dropna()
+                subset_2 = tmp[idx : idx + 30][band].dropna()
+                if subset_1.shape[0] > 1 and subset_2.shape[0] > 1:
+                    reg_1 = (
+                        LinearRegression()
+                        .fit(np.array([subset_1.index]).reshape(-1, 1), subset_1)
+                        .coef_[0]
                     )
-                    print(reg.coef_)
+                    reg_2 = (
+                        LinearRegression()
+                        .fit(np.array([subset_2.index]).reshape(-1, 1), subset_2)
+                        .coef_[0]
+                    )
+                    r1, _ = pearsonr([i for i in range(len(subset_1))], subset_1)
+                    r2, _ = pearsonr([i for i in range(len(subset_2))], subset_2)
+
+                    coefficient_li.append(reg_1 * r1 - reg_2 * r2)
+                else:
+                    coefficient_li.append(None)
 
                 idx += 1
+
+            tmp["coefficients"] = coefficient_li
+            Q1 = tmp["coefficients"].quantile(0.25)
+            Q3 = tmp["coefficients"].quantile(0.75)
+            IQR = Q3 - Q1
+            tmp["coefficients"].mask(
+                tmp["coefficients"] < Q1 - 1.5 * IQR, -1, inplace=True
+            )
+            tmp["coefficients"].mask(
+                tmp["coefficients"] > Q3 + 1.5 * IQR, 1, inplace=True
+            )
+            tmp["coefficients"].mask(
+                (tmp["coefficients"] <= Q3 + 1.5 * IQR)
+                & (tmp["coefficients"] >= Q1 - 1.5 * IQR),
+                0,
+                inplace=True,
+            )
+
+            _, _ = plt.subplots(figsize=(20, 4))
+            sns.scatterplot(
+                data=tmp, x="Date", y=band, hue="coefficients", palette="RdYlBu", s=10
+            )
+            plt.grid()
+            plt.show()
         else:
             continue
 
