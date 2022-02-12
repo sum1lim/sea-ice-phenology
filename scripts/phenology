@@ -16,71 +16,59 @@ def main(args):
     del ts_df["system:time_start"]
 
     for band in ts_df.columns:
-        if band.endswith("_interpolate"):
-            coefficient_li = [0 for _ in range(15)]
-            tmp = ts_df.copy()
-            tmp["Date"] = tmp.index
+        coefficient_li = [0 for _ in range(15)]
+        tmp = ts_df.copy()
+        tmp["Date"] = tmp.index
 
-            idx = 15
-            while idx < tmp.shape[0]:
-                subset_1 = tmp[idx - 15 : idx][band].dropna()
-                subset_2 = tmp[idx : idx + 15][band].dropna()
-                if subset_1.shape[0] > 10 and subset_2.shape[0] > 10:
-                    reg_1 = (
-                        LinearRegression()
-                        .fit(np.array([subset_1.index]).reshape(-1, 1), subset_1)
-                        .coef_[0]
-                    )
-                    reg_2 = (
-                        LinearRegression()
-                        .fit(np.array([subset_2.index]).reshape(-1, 1), subset_2)
-                        .coef_[0]
-                    )
-                    r1, _ = pearsonr([i for i in range(len(subset_1))], subset_1)
-                    r2, _ = pearsonr([i for i in range(len(subset_2))], subset_2)
-
-                    coefficient_li.append(reg_1 * r1 - reg_2 * r2)
-                else:
-                    coefficient_li.append(0)
-
-                idx += 1
-
-            tmp["anomaly"] = coefficient_li
-            Q1 = tmp["anomaly"].quantile(0.25)
-            Q3 = tmp["anomaly"].quantile(0.75)
-            IQR = Q3 - Q1
-            tmp["anomaly"].mask(tmp["anomaly"] < Q1 - 1.5 * IQR, -1, inplace=True)
-            tmp["anomaly"].mask(tmp["anomaly"] > Q3 + 1.5 * IQR, 1, inplace=True)
-            tmp["anomaly"].mask(
-                (tmp["anomaly"] <= Q3 + 1.5 * IQR) & (tmp["anomaly"] >= Q1 - 1.5 * IQR),
-                0,
-                inplace=True,
-            )
-            tmp_dropna = tmp[band].dropna()
-            tmp["anomaly"].mask(
-                (
-                    tmp[band]
-                    < 0.7 * (max(tmp_dropna - min(tmp_dropna) + min(tmp_dropna)))
+        idx = 15
+        while idx < tmp.shape[0]:
+            subset_1 = tmp[idx - 15 : idx][band].dropna()
+            subset_2 = tmp[idx : idx + 15][band].dropna()
+            if subset_1.shape[0] > 5 and subset_2.shape[0] > 5:
+                reg_1 = (
+                    LinearRegression()
+                    .fit(np.array([subset_1.index]).reshape(-1, 1), subset_1)
+                    .coef_[0]
                 )
-                & (
-                    tmp[band]
-                    > 0.3 * (max(tmp_dropna - min(tmp_dropna) + min(tmp_dropna)))
-                ),
-                0,
-                inplace=True,
-            )
+                reg_2 = (
+                    LinearRegression()
+                    .fit(np.array([subset_2.index]).reshape(-1, 1), subset_2)
+                    .coef_[0]
+                )
+                r1, _ = pearsonr([i for i in range(len(subset_1))], subset_1)
+                r2, _ = pearsonr([i for i in range(len(subset_2))], subset_2)
 
-            sns.set_style("dark")
-            _, _ = plt.subplots(figsize=(20, 4))
+                coefficient_li.append(reg_1 * r1 - reg_2 * r2)
+            else:
+                coefficient_li.append(0)
 
-            sns.scatterplot(
-                data=tmp, x="Date", y=band, hue="anomaly", palette="tab10", s=5
-            )
+            idx += 1
 
-            plt.grid()
-            plt.show()
-        else:
-            continue
+        tmp["anomaly"] = coefficient_li
+        Q1 = tmp["anomaly"].quantile(0.25)
+        Q3 = tmp["anomaly"].quantile(0.75)
+        IQR = Q3 - Q1
+        tmp["anomaly"].mask(tmp["anomaly"] < Q1 - 1.5 * IQR, -1, inplace=True)
+        tmp["anomaly"].mask(tmp["anomaly"] > Q3 + 1.5 * IQR, 1, inplace=True)
+        tmp["anomaly"].mask(
+            (tmp["anomaly"] <= Q3 + 1.5 * IQR) & (tmp["anomaly"] >= Q1 - 1.5 * IQR),
+            0,
+            inplace=True,
+        )
+        tmp["anomaly"].mask(
+            (tmp[band] < ts_df[band].quantile(0.75))
+            & (tmp[band] > ts_df[band].quantile(0.25)),
+            0,
+            inplace=True,
+        )
+
+        sns.set_style("dark")
+        _, _ = plt.subplots(figsize=(20, 4))
+
+        sns.scatterplot(data=tmp, x="Date", y=band, hue="anomaly", palette="tab10", s=5)
+
+        plt.grid()
+        plt.show()
 
 
 if __name__ == "__main__":

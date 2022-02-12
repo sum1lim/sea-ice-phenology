@@ -36,8 +36,9 @@ def main(args):
         tmp[band].mask(tmp[band] < Q1 - 1.5 * IQR, None, inplace=True)
         tmp[band].mask(tmp[band] > Q3 + 1.5 * IQR, None, inplace=True)
 
+        sns.set_style("dark")
         _, _ = plt.subplots(figsize=(20, 4))
-        sns.scatterplot(data=tmp, x="Date", y=band, hue="mask", style="mask")
+        sns.scatterplot(data=tmp, x="Date", y=band, hue="mask", style="mask", s=5)
         plt.grid()
         plt.show()
 
