@@ -64,8 +64,9 @@ def main(args):
 
             _, _ = plt.subplots(figsize=(20, 4))
             sns.scatterplot(
-                data=tmp, x="Date", y=band, hue="coefficients", palette="RdYlBu", s=10
+                data=tmp, x="Date", y=band, hue="coefficients", palette="tab10", s=10
             )
+            sns.set_style("dark")
             plt.grid()
             plt.show()
         else:
