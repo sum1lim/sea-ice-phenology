@@ -10,11 +10,12 @@ def main(args):
     ts_df["system:time_start"] = pd.to_datetime(ts_df["system:time_start"])
     ts_df.index = ts_df["system:time_start"]
     del ts_df["system:time_start"]
+    ts_df = ts_df.asfreq("D")
 
     for band in ts_df.columns:
         first_valid = ts_df[band][ts_df[band].notnull()].index[0]
         last_valid = ts_df[band][ts_df[band].notnull()].index[-1]
-        tmp = ts_df.loc[first_valid:last_valid].copy().asfreq('D')
+        tmp = ts_df.loc[first_valid:last_valid].copy()
         tmp["Date"] = tmp.index
         tmp["mask"] = tmp[band].isnull()
         tmp["mask"].mask(tmp["mask"] == True, "Interpolated", inplace=True)
