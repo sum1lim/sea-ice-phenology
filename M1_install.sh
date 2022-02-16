@@ -3,9 +3,10 @@
 curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh" --output ./Miniforge3-MacOSX-arm64.sh
 chmod +x ./Miniforge3-MacOSX-arm64.sh
 sh ./Miniforge3-MacOSX-arm64.sh
+source ~/miniforge3/bin/activate
 rm ./Miniforge3-MacOSX-arm64.sh
 
-conda remove -n sip-venv
+conda remove -n sip-venv --all
 conda create --name=sip-venv
 conda activate sip-venv
 
