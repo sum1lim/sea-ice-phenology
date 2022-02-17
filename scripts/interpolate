@@ -1,8 +1,37 @@
 #!/usr/bin/env python3
 import argparse
+import math
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+
+
+def median_interpolation(series):
+    new_series = {"system:time_start": [], "interpolated": []}
+
+    for idx, item in enumerate(series.iteritems()):
+        start = idx - 3
+        end = idx + 4
+        if start < 0:
+            start = 0
+        if end > len(series):
+            end = len(series)
+
+        timestamp, val = item
+        if (
+            math.isnan(val)
+            and len(series[start:idx].dropna()) > 0
+            and len(series[idx + 1 : end].dropna()) > 0
+        ):
+            new_series["system:time_start"].append(timestamp)
+            new_series["interpolated"].append(series[start:end].median())
+        else:
+            new_series["system:time_start"].append(timestamp)
+            new_series["interpolated"].append(val)
+
+    df = pd.DataFrame(new_series)
+    df.index = df["system:time_start"]
+    return df["interpolated"]
 
 
 def main(args):
@@ -25,6 +54,8 @@ def main(args):
             tmp[band] = tmp[band].interpolate(
                 "slinear", limit_direction="both", limit_area="inside", limit=3
             )
+        if args.type == "median":
+            tmp[band] = median_interpolation(tmp[band])
 
         Q1 = ts_df[band].quantile(0.25)
         Q3 = ts_df[band].quantile(0.75)
@@ -40,7 +71,7 @@ def main(args):
 
         ts_df[f"{band}_interpolate"] = tmp[band]
 
-    ts_df.to_csv(f"{'.'.join(args.input.split('.')[:-1])}_interpolate.csv")
+    ts_df.to_csv(f"{'.'.join(args.input.split('.')[:-1])}_{args.type}.csv")
 
 
 if __name__ == "__main__":
@@ -55,7 +86,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--type",
         type=str,
-        choices=["linear"],
+        choices=["linear", "median"],
         default="linear",
         help="Interpolation type",
     )
