@@ -21,9 +21,10 @@ def main(args):
         tmp["mask"].mask(tmp["mask"] == True, "Interpolated", inplace=True)
         tmp["mask"].mask(tmp["mask"] == False, "Original", inplace=True)
 
-        tmp[band] = tmp[band].interpolate(
-            "slinear", limit_direction="both", limit_area="inside", limit=3
-        )
+        if args.type == "linear":
+            tmp[band] = tmp[band].interpolate(
+                "slinear", limit_direction="both", limit_area="inside", limit=3
+            )
 
         Q1 = ts_df[band].quantile(0.25)
         Q3 = ts_df[band].quantile(0.75)
@@ -50,6 +51,13 @@ if __name__ == "__main__":
         type=str,
         help="Path to time-series data file (csv)",
         required=True,
+    )
+    parser.add_argument(
+        "--type",
+        type=str,
+        choices=["linear"],
+        default="linear",
+        help="Interpolation type",
     )
 
     args = parser.parse_args()
