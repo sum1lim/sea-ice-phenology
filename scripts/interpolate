@@ -22,13 +22,7 @@ def main(args):
         tmp["mask"].mask(tmp["mask"] == False, "Original", inplace=True)
 
         tmp[band] = tmp[band].interpolate(
-            "slinear", limit_direction="both", limit_area="inside", limit=1
-        )
-        tmp[band] = tmp[band].interpolate(
-            "spline", order=3, limit_direction="both", limit_area="inside", limit=4
-        )
-        tmp[band] = tmp[band].interpolate(
-            "slinear", limit_direction="both", limit_area="inside", limit=1
+            "slinear", limit_direction="both", limit_area="inside", limit=3
         )
 
         Q1 = ts_df[band].quantile(0.25)
