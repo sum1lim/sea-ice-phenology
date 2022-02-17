@@ -91,7 +91,7 @@ if __name__ == "__main__":
         "--type",
         type=str,
         choices=["linear", "slinear", "median"],
-        default="linear",
+        default="median",
         help="Interpolation type",
     )
 
