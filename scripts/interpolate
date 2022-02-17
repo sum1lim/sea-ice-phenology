@@ -10,8 +10,8 @@ def median_interpolation(series):
     new_series = {"system:time_start": [], "interpolated": []}
 
     for idx, item in enumerate(series.iteritems()):
-        start = idx - 3
-        end = idx + 4
+        start = idx - 15
+        end = idx + 16
         if start < 0:
             start = 0
         if end > len(series):
