@@ -55,12 +55,6 @@ def main(args):
             0,
             inplace=True,
         )
-        tmp["anomaly"].mask(
-            (tmp[band] < ts_df[band].quantile(0.75))
-            & (tmp[band] > ts_df[band].quantile(0.25)),
-            0,
-            inplace=True,
-        )
 
         sns.set_style("dark")
         _, _ = plt.subplots(figsize=(20, 4))
