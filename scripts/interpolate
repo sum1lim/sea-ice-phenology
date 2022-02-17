@@ -52,6 +52,10 @@ def main(args):
 
         if args.type == "linear":
             tmp[band] = tmp[band].interpolate(
+                "linear", limit_direction="both", limit_area="inside", limit=3
+            )
+        if args.type == "slinear":
+            tmp[band] = tmp[band].interpolate(
                 "slinear", limit_direction="both", limit_area="inside", limit=3
             )
         if args.type == "median":
@@ -86,7 +90,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--type",
         type=str,
-        choices=["linear", "median"],
+        choices=["linear", "slinear", "median"],
         default="linear",
         help="Interpolation type",
     )
