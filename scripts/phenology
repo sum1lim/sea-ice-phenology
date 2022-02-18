@@ -7,6 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from scipy.stats import pearsonr
+from scipy.ndimage import gaussian_filter1d
 
 
 def main(args):
@@ -23,8 +24,13 @@ def main(args):
         idx = 15
         while idx < tmp.shape[0]:
             subset_1 = tmp[idx - 15 : idx][band].dropna()
-            subset_2 = tmp[idx : idx + 15][band].dropna()
-            if subset_1.shape[0] > 5 and subset_2.shape[0] > 5:
+            subset_2 = tmp[idx : idx + 16][band].dropna()
+            notna_1 = tmp[idx - 15 : idx][band].notna()
+            index_1 = notna_1[notna_1].index.astype(np.int64)
+            notna_2 = tmp[idx : idx + 16][band].notna()
+            index_2 = notna_2[notna_2].index.astype(np.int64)
+
+            if subset_1.shape[0] > 10 and subset_2.shape[0] > 10:
                 reg_1 = (
                     LinearRegression()
                     .fit(np.array([subset_1.index]).reshape(-1, 1), subset_1)
@@ -35,8 +41,8 @@ def main(args):
                     .fit(np.array([subset_2.index]).reshape(-1, 1), subset_2)
                     .coef_[0]
                 )
-                r1, _ = pearsonr([i for i in range(len(subset_1))], subset_1)
-                r2, _ = pearsonr([i for i in range(len(subset_2))], subset_2)
+                r1, _ = pearsonr(index_1, subset_1)
+                r2, _ = pearsonr(index_2, subset_2)
 
                 coefficient_li.append(reg_1 * r1 - reg_2 * r2)
             else:
@@ -44,7 +50,7 @@ def main(args):
 
             idx += 1
 
-        tmp["anomaly"] = coefficient_li
+        tmp["anomaly"] = gaussian_filter1d(coefficient_li, 10)
         Q1 = tmp["anomaly"].quantile(0.25)
         Q3 = tmp["anomaly"].quantile(0.75)
         IQR = Q3 - Q1
