@@ -76,6 +76,8 @@ def main(args):
             tmp["anomaly"] * tmp["maxima"] + tmp["anomaly"] * tmp["minima"]
         )
         tmp["marker"] = tmp["phenology"].abs()
+        tmp["marker"].mask(tmp["marker"] == 0, "", inplace=True)
+        tmp["marker"].mask(tmp["marker"] == 1, "Phenology", inplace=True)
 
         sns.set_style("dark")
         _, _ = plt.subplots(figsize=(20, 4))
