@@ -4,6 +4,24 @@ import math
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from scipy.ndimage import gaussian_filter1d
+
+
+def gaussian_interpolation(series):
+    new_series = series.copy()
+    new_series = pd.Series(
+        gaussian_filter1d(
+            new_series.interpolate(
+                "linear", limit_direction="both", limit_area="inside", limit=15
+            ),
+            10,
+        )
+    )
+
+    new_series.index = series.index
+    indices = series.dropna().index
+    new_series.loc[indices] = series[indices]
+    return new_series
 
 
 def median_interpolation(series):
@@ -61,6 +79,9 @@ def main(args):
         if args.type == "median":
             tmp[band] = median_interpolation(tmp[band])
 
+        if args.type == "gaussian":
+            tmp[band] = gaussian_interpolation(tmp[band])
+
         Q1 = ts_df[band].quantile(0.25)
         Q3 = ts_df[band].quantile(0.75)
         IQR = Q3 - Q1
@@ -90,7 +111,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--type",
         type=str,
-        choices=["linear", "slinear", "median"],
+        choices=["linear", "slinear", "median", "gaussian"],
         default="median",
         help="Interpolation type",
     )
