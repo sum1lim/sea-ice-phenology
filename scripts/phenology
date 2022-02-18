@@ -50,7 +50,7 @@ def main(args):
 
             idx += 1
 
-        tmp["anomaly"] = gaussian_filter1d(coefficient_li, 10)
+        tmp["anomaly"] = gaussian_filter1d(coefficient_li, 5)
         Q1 = tmp["anomaly"].quantile(0.25)
         Q3 = tmp["anomaly"].quantile(0.75)
         IQR = Q3 - Q1
