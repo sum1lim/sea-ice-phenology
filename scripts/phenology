@@ -31,7 +31,7 @@ def main(args):
             notna_2 = tmp[idx : idx + 15][band].notna()
             index_2 = notna_2[notna_2].index.astype(np.int64)
 
-            if subset_1.shape[0] > 5 and subset_2.shape[0] > 5:
+            if subset_1.shape[0] > 10 and subset_2.shape[0] > 10:
                 reg_1 = (
                     LinearRegression()
                     .fit(np.array([subset_1.index]).reshape(-1, 1), subset_1)
