@@ -6,13 +6,13 @@ def interQuantileMask(series, low=None, middle=None, high=None):
     Q3 = series.quantile(0.75)
     IQR = Q3 - Q1
 
-    if low:
+    if low != None:
         series.mask(series < Q1 - 1.5 * IQR, low, inplace=True)
-    if high:
+    if high != None:
         series.mask(series > Q3 + 1.5 * IQR, high, inplace=True)
-    if middle:
+    if middle != None:
         series.mask(
-            (series <= Q3 + 3 * IQR) & (series >= Q1 - 3 * IQR),
+            (series <= Q3 + 1.5 * IQR) & (series >= Q1 - 1.5 * IQR),
             middle,
             inplace=True,
         )

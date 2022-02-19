@@ -62,7 +62,7 @@ def main(args):
         tmp["maxima"] = [1 if i in maxima[0] else 0 for i in range(len(tmp))]
         tmp["minima"] = [1 if i in minima[0] else 0 for i in range(len(tmp))]
 
-        tmp["anomaly"] = interQuantileMask(tmp["anomaly"], -1, 0, 1)
+        tmp["anomaly"] = interQuantileMask(tmp["anomaly"], low=-1, middle=0, high=1)
 
         tmp["phenology"] = (
             tmp["anomaly"] * tmp["maxima"] + tmp["anomaly"] * tmp["minima"]
