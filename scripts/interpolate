@@ -5,6 +5,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
+from sea_ice_phenology.utils import interQuantileMask
 
 
 def gaussian_interpolation(series):
@@ -82,11 +83,7 @@ def main(args):
         if args.type == "gaussian":
             tmp[band] = gaussian_interpolation(tmp[band])
 
-        Q1 = ts_df[band].quantile(0.25)
-        Q3 = ts_df[band].quantile(0.75)
-        IQR = Q3 - Q1
-        tmp[band].mask(tmp[band] < Q1 - 1.5 * IQR, None, inplace=True)
-        tmp[band].mask(tmp[band] > Q3 + 1.5 * IQR, None, inplace=True)
+        tmp[band] = interQuantileMask(tmp[band], low="", high="")
 
         sns.set_style("dark")
         _, _ = plt.subplots(figsize=(20, 4))
