@@ -42,20 +42,26 @@ def median_interpolation(series):
 
         for idx, item in enumerate(old_series.iteritems()):
             start = idx - subset_length
-            end = idx + subset_length
+            end = idx + subset_length + 1
             if start < 0:
                 start = 0
             if end > len(old_series):
                 end = len(old_series)
 
+            left_len = len(old_series[start:idx].dropna())
+            right_len = len(old_series[idx + 1 : end].dropna())
             timestamp, val = item
             if (
                 math.isnan(val)
-                and len(old_series[start:idx].dropna()) > 0
-                and len(old_series[idx + 1 : end].dropna()) > 0
+                and left_len > 0
+                and right_len > 0
+                and min(left_len, right_len) / max(left_len, right_len) >= 0.5
             ):
                 new_series["system:time_start"].append(timestamp)
-                new_series["interpolated"].append(old_series[start:end].median())
+                if (idx % 2) == 0:
+                    new_series["interpolated"].append(old_series[start:end].median())
+                if (idx % 2) == 1:
+                    new_series["interpolated"].append(old_series[start:end].mean())
             else:
                 new_series["system:time_start"].append(timestamp)
                 new_series["interpolated"].append(val)

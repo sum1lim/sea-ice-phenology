@@ -17,25 +17,29 @@ def main(args):
     ts_df["system:time_start"] = pd.to_datetime(ts_df["system:time_start"])
     ts_df.index = ts_df["system:time_start"]
     del ts_df["system:time_start"]
+    subset_length = 30
 
     for band in ts_df.columns:
         if band.endswith("interpolate") == False:
             continue
 
-        coefficient_li = [0 for _ in range(15)]
+        coefficient_li = [0 for _ in range(subset_length)]
         tmp = ts_df.copy()
         tmp["Date"] = tmp.index
 
-        idx = 15
+        idx = subset_length
         while idx < tmp.shape[0]:
-            subset_1 = tmp[idx - 15 : idx][band].dropna()
-            subset_2 = tmp[idx : idx + 15][band].dropna()
-            notna_1 = tmp[idx - 15 : idx][band].notna()
+            subset_1 = tmp[idx - subset_length : idx][band].dropna()
+            subset_2 = tmp[idx : idx + subset_length][band].dropna()
+            notna_1 = tmp[idx - subset_length : idx][band].notna()
             index_1 = notna_1[notna_1].index.astype(np.int64)
-            notna_2 = tmp[idx : idx + 15][band].notna()
+            notna_2 = tmp[idx : idx + subset_length][band].notna()
             index_2 = notna_2[notna_2].index.astype(np.int64)
 
-            if subset_1.shape[0] > 10 and subset_2.shape[0] > 10:
+            if (
+                subset_1.shape[0] > 2 * subset_length // 3
+                and subset_2.shape[0] > 2 * subset_length // 3
+            ):
                 reg_1 = (
                     LinearRegression()
                     .fit(np.array([subset_1.index]).reshape(-1, 1), subset_1)
@@ -57,8 +61,8 @@ def main(args):
 
         tmp["anomaly"] = gaussian_filter1d(coefficient_li, 7)
 
-        maxima = argrelextrema(tmp["anomaly"].to_numpy(), np.greater)
-        minima = argrelextrema(tmp["anomaly"].to_numpy(), np.less)
+        maxima = argrelextrema(tmp["anomaly"].to_numpy(), np.greater, order=30)
+        minima = argrelextrema(tmp["anomaly"].to_numpy(), np.less, order=30)
         tmp["maxima"] = [1 if i in maxima[0] else 0 for i in range(len(tmp))]
         tmp["minima"] = [1 if i in minima[0] else 0 for i in range(len(tmp))]
 
