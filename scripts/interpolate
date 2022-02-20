@@ -9,48 +9,64 @@ from sea_ice_phenology.utils import interQuantileMask
 
 
 def gaussian_interpolation(series):
+    old_series = series.copy()
     new_series = series.copy()
-    new_series = pd.Series(
-        gaussian_filter1d(
-            new_series.interpolate(
-                "linear", limit_direction="both", limit_area="inside", limit=15
-            ),
-            10,
-        )
-    )
+    indices = old_series.dropna().index
 
-    new_series.index = series.index
-    indices = series.dropna().index
-    new_series.loc[indices] = series[indices]
+    for sigma in range(5):
+        new_series = pd.Series(
+            gaussian_filter1d(
+                new_series.interpolate(
+                    "slinear",
+                    limit_direction="both",
+                    limit_area="inside",
+                    limit=sigma + 1,
+                ),
+                sigma + 1,
+            )
+        )
+
+        new_series.index = series.index
+        new_series.loc[indices] = old_series[indices]
+
+        indices = old_series.dropna().index
+        old_series = new_series
+
     return new_series
 
 
 def median_interpolation(series):
-    new_series = {"system:time_start": [], "interpolated": []}
+    old_series = series.copy()
+    for subset_length in range(30):
+        new_series = {"system:time_start": [], "interpolated": []}
 
-    for idx, item in enumerate(series.iteritems()):
-        start = idx - 15
-        end = idx + 16
-        if start < 0:
-            start = 0
-        if end > len(series):
-            end = len(series)
+        for idx, item in enumerate(old_series.iteritems()):
+            start = idx - subset_length
+            end = idx + subset_length
+            if start < 0:
+                start = 0
+            if end > len(old_series):
+                end = len(old_series)
 
-        timestamp, val = item
-        if (
-            math.isnan(val)
-            and len(series[start:idx].dropna()) > 0
-            and len(series[idx + 1 : end].dropna()) > 0
-        ):
-            new_series["system:time_start"].append(timestamp)
-            new_series["interpolated"].append(series[start:end].median())
-        else:
-            new_series["system:time_start"].append(timestamp)
-            new_series["interpolated"].append(val)
+            timestamp, val = item
+            if (
+                math.isnan(val)
+                and len(old_series[start:idx].dropna()) > 0
+                and len(old_series[idx + 1 : end].dropna()) > 0
+            ):
+                new_series["system:time_start"].append(timestamp)
+                new_series["interpolated"].append(old_series[start:end].median())
+            else:
+                new_series["system:time_start"].append(timestamp)
+                new_series["interpolated"].append(val)
 
-    df = pd.DataFrame(new_series)
-    df.index = df["system:time_start"]
-    return df["interpolated"]
+        df = pd.DataFrame(new_series)
+        df.index = df["system:time_start"]
+
+        new_series = df["interpolated"]
+        old_series = new_series
+
+    return new_series
 
 
 def main(args):
