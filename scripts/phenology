@@ -11,6 +11,8 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.signal import argrelextrema
 from sea_ice_phenology.utils import interQuantileMask
 
+pd.options.mode.chained_assignment = None
+
 
 def main(args):
     ts_df = pd.read_csv(args.input, thousands=",")
@@ -68,12 +70,48 @@ def main(args):
 
         tmp["anomaly"] = interQuantileMask(tmp["anomaly"], low=-1, middle=0, high=1)
 
-        tmp["phenology"] = (
-            tmp["anomaly"] * tmp["maxima"] + tmp["anomaly"] * tmp["minima"]
+        # Divide timeseries into freezing, transition and melt seasons
+        filtered = pd.Series(gaussian_filter1d(tmp[band], 10), index=tmp.index)
+        tmp["freeze_melt"] = tmp[band].copy()
+        tmp["freeze_melt"].loc[filtered.dropna().index] = filtered[
+            filtered.dropna().index
+        ]
+        upper_thresh = (max(tmp["freeze_melt"]) - min(tmp["freeze_melt"])) * 0.7 + min(
+            tmp["freeze_melt"]
         )
+        lower_thresh = (max(tmp["freeze_melt"]) - min(tmp["freeze_melt"])) * 0.1 + min(
+            tmp["freeze_melt"]
+        )
+        tmp["freeze_melt"].mask(tmp["freeze_melt"] < lower_thresh, -3, inplace=True)
+        tmp["freeze_melt"].mask(
+            (tmp["freeze_melt"] > lower_thresh) & (tmp["freeze_melt"] < upper_thresh),
+            0,
+            inplace=True,
+        )
+        tmp["freeze_melt"].mask(tmp["freeze_melt"] > upper_thresh, 3, inplace=True)
+
+        # Detect dates with high probability of phenology
+        tmp["phenology"] = (
+            tmp["anomaly"] * tmp["maxima"]
+            + tmp["anomaly"] * tmp["minima"]
+            + tmp["freeze_melt"]
+        )
+        tmp["phenology"].mask(tmp["phenology"] == 3, 0, inplace=True)
+        tmp["phenology"].mask(tmp["phenology"] == -3, 0, inplace=True)
+
+        # Maker for plotting
         tmp["marker"] = tmp["phenology"].abs()
+        tmp["marker"].mask(tmp["marker"] > 0, "Phenology", inplace=True)
         tmp["marker"].mask(tmp["marker"] == 0, "", inplace=True)
-        tmp["marker"].mask(tmp["marker"] == 1, "Phenology", inplace=True)
+
+        # Define names for phenology
+        tmp["phenology"].mask(tmp["phenology"] == 0, "", inplace=True)
+        tmp["phenology"].mask(tmp["phenology"] == 4, "FU", inplace=True)
+        tmp["phenology"].mask(tmp["phenology"] == 2, "MO", inplace=True)
+        tmp["phenology"].mask(tmp["phenology"] == 1, "PO", inplace=True)
+        tmp["phenology"].mask(tmp["phenology"] == -1, "PD", inplace=True)
+        tmp["phenology"].mask(tmp["phenology"] == -2, "OW", inplace=True)
+        tmp["phenology"].mask(tmp["phenology"] == -4, "FO", inplace=True)
 
         sns.set_style("dark")
         _, _ = plt.subplots(figsize=(20, 4))
@@ -85,7 +123,7 @@ def main(args):
             hue="phenology",
             palette="tab10",
             size="marker",
-            sizes=(30, 10),
+            sizes=(30, 5),
         )
 
         plt.grid()

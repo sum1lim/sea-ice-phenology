@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 
 
-def interQuantileMask(series, low=None, middle=None, high=None):
-    Q1 = series.quantile(0.25)
-    Q3 = series.quantile(0.75)
+def interQuantileMask(series, low=None, middle=None, high=None, multiple=1.5):
+    new_series = series.copy()
+    Q1 = new_series.quantile(0.25)
+    Q3 = new_series.quantile(0.75)
     IQR = Q3 - Q1
 
     if low != None:
-        series.mask(series < Q1 - 1.5 * IQR, low, inplace=True)
+        new_series.mask(new_series < Q1 - multiple * IQR, low, inplace=True)
     if high != None:
-        series.mask(series > Q3 + 1.5 * IQR, high, inplace=True)
+        new_series.mask(new_series > Q3 + multiple * IQR, high, inplace=True)
     if middle != None:
-        series.mask(
-            (series <= Q3 + 1.5 * IQR) & (series >= Q1 - 1.5 * IQR),
+        new_series.mask(
+            (new_series <= Q3 + multiple * IQR) & (new_series >= Q1 - multiple * IQR),
             middle,
             inplace=True,
         )
 
-    return series
+    return new_series

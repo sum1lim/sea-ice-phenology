@@ -23,10 +23,10 @@ def gaussian_interpolation(series):
                     limit=sigma + 1,
                 ),
                 sigma + 1,
-            )
+            ),
+            index=series.index,
         )
 
-        new_series.index = series.index
         new_series.loc[indices] = old_series[indices]
 
         indices = old_series.dropna().index
