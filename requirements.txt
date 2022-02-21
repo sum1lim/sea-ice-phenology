@@ -1,8 +1,11 @@
-earthengine-api
+earthengine - api
 tqdm
 pandas
 seaborn
-scikit-learn
+scikit - learn
 vext
 vext.gi
 pywebview
+qtpy
+PyQt5
+pyqtwebengine

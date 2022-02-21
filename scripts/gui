@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 import webview
 
-if __name__ == "__main__":
+
+def main():
     webview.create_window(
         "MODIS Time Series",
         "https://sangwon.users.earthengine.app/view/seaicephenology",
     )
-    webview.start()
+    webview.start(debug=True, gui="qt")
+
+
+if __name__ == "__main__":
+    main()
