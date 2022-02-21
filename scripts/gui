@@ -4,19 +4,26 @@ import webbrowser
 
 
 def main():
-    root = Tk()
-    frame = Frame(root)
+    window = Tk()
+    frame = Frame(window)
     frame.pack()
+
+    title = Label(
+        text="Sea Ice Phenology Detection\nby ICE Lab at University of Victoria"
+    )
+    title.pack()
 
     url = "https://sangwon.users.earthengine.app/view/seaicephenology"
 
     def OpenUrl(url):
         webbrowser.open_new(url)
 
-    button = Button(root, text="CLCK", command=lambda aurl=url: OpenUrl(aurl))
+    button = Button(
+        window, text="Retrieve MODIS data", command=lambda aurl=url: OpenUrl(aurl)
+    )
 
     button.pack()
-    root.mainloop()
+    window.mainloop()
 
 
 if __name__ == "__main__":
