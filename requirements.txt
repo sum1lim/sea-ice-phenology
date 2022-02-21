@@ -3,3 +3,6 @@ tqdm
 pandas
 seaborn
 scikit-learn
+vext
+vext.gi
+pywebview
