@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
-import webview
+from tkinter import *
+import webbrowser
 
 
 def main():
-    webview.create_window(
-        "MODIS Time Series",
-        "https://sangwon.users.earthengine.app/view/seaicephenology",
-    )
-    webview.start(debug=True, gui="qt")
+    root = Tk()
+    frame = Frame(root)
+    frame.pack()
+
+    url = "https://sangwon.users.earthengine.app/view/seaicephenology"
+
+    def OpenUrl(url):
+        webbrowser.open_new(url)
+
+    button = Button(root, text="CLCK", command=lambda aurl=url: OpenUrl(aurl))
+
+    button.pack()
+    root.mainloop()
 
 
 if __name__ == "__main__":
