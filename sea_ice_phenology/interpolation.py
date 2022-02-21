@@ -1,28 +1,47 @@
 #!/usr/bin/env python3
 import sys
-import math
 import pandas as pd
+from math import isnan, sqrt, pi, e
 from scipy.ndimage import gaussian_filter1d
+
+
+def gaussian_weights(size, sigma):
+    ret_li = []
+    for i in range(size + 1):
+        weight = (1 / (sqrt(2 * pi) * (i + 1))) * (
+            e ** -((i ** 2) / (2 * (i + 1) ** 2))
+        )
+        if i == 0:
+            ret_li.append(weight)
+        else:
+            ret_li.insert(0, weight)
+            ret_li.append(weight)
+
+    return ret_li
 
 
 def iterative_interpolation(series, method):
     old_series = series.copy()
     for subset_length in range(30):
         new_series = {"system:time_start": [], "interpolated": []}
+        if method == "random":
+            weight_li = gaussian_weights(subset_length, 5)
 
         for idx, item in enumerate(old_series.iteritems()):
             start = idx - subset_length
             end = idx + subset_length + 1
-            if start < 0:
-                start = 0
-            if end > len(old_series):
-                end = len(old_series)
 
             left_len = len(old_series[start:idx].dropna())
             right_len = len(old_series[idx + 1 : end].dropna())
             timestamp, val = item
+
+            if start < 0 or end > len(old_series):
+                new_series["system:time_start"].append(timestamp)
+                new_series["interpolated"].append(val)
+                continue
+
             if (
-                math.isnan(val)
+                isnan(val)
                 and left_len > 0
                 and right_len > 0
                 and min(left_len, right_len) / max(left_len, right_len) >= 0.5
@@ -35,12 +54,13 @@ def iterative_interpolation(series, method):
                         )
                     elif method == "random":
                         new_series["interpolated"].append(
-                            old_series[start:end].sample(1)[0]
+                            old_series[start:end].sample(1, weights=weight_li)[0]
                         )
                     else:
                         print("Interpolation method not found", file=sys.stderr)
                         exit(1)
                 if (idx % 2) == 1:
+                    # mean interpolation once every two iterations for variability
                     new_series["interpolated"].append(old_series[start:end].mean())
             else:
                 new_series["system:time_start"].append(timestamp)
