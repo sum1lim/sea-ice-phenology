@@ -3,6 +3,7 @@ import webview
 
 if __name__ == "__main__":
     webview.create_window(
-        "duckduckgo", "https://sangwon.users.earthengine.app/view/seaicephenology"
+        "MODIS Time Series",
+        "https://sangwon.users.earthengine.app/view/seaicephenology",
     )
-    webview.start()  # this will open the webpage in a new window
+    webview.start()
