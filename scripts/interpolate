@@ -4,7 +4,11 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sea_ice_phenology.utils import interQuantileMask
-from sea_ice_phenology.interpolation import gaussian_interpolation, median_interpolation
+from sea_ice_phenology.interpolation import (
+    gaussian_interpolation,
+    median_interpolation,
+    random_interpolation,
+)
 
 
 def main(args):
@@ -37,6 +41,9 @@ def main(args):
         if args.type == "gaussian":
             tmp[band] = gaussian_interpolation(tmp[band])
 
+        if args.type == "random":
+            tmp[band] = random_interpolation(tmp[band])
+
         tmp[band] = interQuantileMask(tmp[band], low="", high="")
 
         sns.set_style("dark")
@@ -62,7 +69,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--type",
         type=str,
-        choices=["linear", "slinear", "median", "gaussian"],
+        choices=["linear", "slinear", "median", "gaussian", "random"],
         default="median",
         help="Interpolation type",
     )
