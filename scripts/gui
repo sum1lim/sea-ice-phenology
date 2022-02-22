@@ -1,28 +1,60 @@
 #!/usr/bin/env python3
-from tkinter import *
+import tkinter as tk
 import webbrowser
+from tkinter import filedialog
+
+
+# Function for opening the
+# file explorer window
+def browseFiles():
+    filename = filedialog.askopenfilename(
+        initialdir="/",
+        title="Select a File",
+        filetypes=(("CSV files", "*.csv*"), ("all files", "*.*")),
+    )
 
 
 def main():
-    window = Tk()
-    frame = Frame(window)
-    frame.pack()
+    window = tk.Tk()
+    window.geometry("500x500")
+    window.config(background="white")
+    frame = tk.Frame(window)
+    frame.grid()
 
-    title = Label(
-        text="Sea Ice Phenology Detection\nby ICE Lab at University of Victoria"
+    title = tk.Label(
+        window,
+        text="Sea Ice Phenology Detection\nby ICE Lab at University of Victoria",
+        width=100,
+        height=4,
+        fg="black",
     )
-    title.pack()
+    title.config(background="white")
 
     url = "https://sangwon.users.earthengine.app/view/seaicephenology"
 
     def OpenUrl(url):
         webbrowser.open_new(url)
 
-    button = Button(
+    button_MODIS = tk.Button(
         window, text="Retrieve MODIS data", command=lambda aurl=url: OpenUrl(aurl)
     )
 
-    button.pack()
+    button_explore = tk.Button(window, text="Browse Files", command=browseFiles)
+
+    button_exit = tk.Button(window, text="Exit", command=exit)
+
+    # Grid method is chosen for placing
+    # the widgets at respective positions
+    # in a table like structure by
+    # specifying rows and columns
+    title.grid(column=0, row=2)
+
+    button_MODIS.grid(column=0, row=3)
+
+    button_explore.grid(column=0, row=4)
+
+    button_exit.grid(column=0, row=5)
+
     window.mainloop()
 
 
