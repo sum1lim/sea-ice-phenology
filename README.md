@@ -5,11 +5,17 @@ Sea Ice Phenology Detection Developed by the ICE Remote Sensing Lab at Universit
 
 ## Getting Started
 ### Downloading the Repository
-Download this repository using the `Code` button at the top right
+Download this repository using the green `Code` button at the top right
 
 ### Install the Package in a Python Virtual Environment
 
-To avoid conflicts, the first step is to isolate this project by creating a Python virtual environment called ```venv```. The virtual environment will have it's own python interpreter, dependencies, and scripts. Commands should only be entered in a terminal that has ```venv``` active. 
+Navigate to the parent directory, `sea-ice-phenology`, in the command line interface and run the following commands.
+
+#### Windows Powershell
+```
+pip install -r requirements.txt
+pip install .
+```
 
 #### Apple Silicon (M1)
 ```
@@ -17,7 +23,7 @@ sh M1_install.sh
 source ~/miniforge3/bin/activate
 ```
 
-#### Linux
+#### Linux & OSX Terminal
 ```
 python -m venv venv
 source venv/bin/activate
@@ -25,11 +31,6 @@ pip install -r requirements.txt
 pip install .
 ```
 
-#### Windows Powershell
-```
-pip install -r requirements.txt
-pip install .
-```
 ## Graphical User Interface (GUI)
 #### Windows
 ```
