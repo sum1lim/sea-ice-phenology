@@ -120,7 +120,7 @@ def interpolate():
                 "--input",
                 input_file,
                 "--type",
-                variable.get(),
+                variable,
             ]: subprocess.run(cmd_line),
         )
         button_run.pack(side="bottom")
