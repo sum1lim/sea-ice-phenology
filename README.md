@@ -19,14 +19,25 @@ source ~/miniforge3/bin/activate
 ```
 python -m venv venv
 source venv/bin/activate
-pip install .
 pip install -r requirements.txt
+pip install .
 ```
 
-#### Windows Command Prompt
+#### Windows Powershell
 ```
-python -m venv venv
-.\venv\Scripts\activate
-pip install .
 pip install -r requirements.txt
+pip install .
 ```
+## Graphical User Interface (GUI)
+#### Windows
+```
+# Must run the following at the parent directory (e.g. @ sea-ice-phenology)
+python ./scripts/gui
+```
+#### Linux & OSX
+```
+gui
+```
+## Command-line User Interface (CLI)
+
+
