@@ -4,6 +4,8 @@ Sea Ice Phenology Detection Developed by the ICE Remote Sensing Lab at Universit
 **Author**: [Sangwon Lim](https://github.com/sum1lim)
 
 ## Getting Started
+### Downloading the Repository
+Download this repository using the `Code` button at the top right
 
 ### Install the Package in a Python Virtual Environment
 
