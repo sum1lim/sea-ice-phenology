@@ -8,15 +8,16 @@ from tkinter import filedialog
 from tkinter import *
 
 
-print(os. getcwd() )
+print(os.getcwd())
 global prefix
 os_name = platform.system()
-if os_name=="Windows":
+if os_name == "Windows":
     wrapper_command = ["python"]
     prefix = "./scripts/"
 else:
     wrapper_command = []
     prefix = ""
+
 
 def authenticate(window):
     def enter(entry, pipe):
@@ -27,7 +28,9 @@ def authenticate(window):
         button_ok.pack_forget()
 
     pipe = subprocess.Popen(
-        wrapper_command + [f"{prefix}authenticate"], stdin=subprocess.PIPE, stdout=subprocess.PIPE
+        wrapper_command + [f"{prefix}authenticate"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
     )
 
     entry = Entry(window, width=40)
@@ -58,7 +61,9 @@ def MODIS_data():
             end = entry_end.get()
 
             subprocess.run(
-                wrapper_command + [f"{prefix}get_timeseries",
+                wrapper_command
+                + [
+                    f"{prefix}get_timeseries",
                     "--coords",
                     lon,
                     lat,
@@ -126,7 +131,8 @@ def interpolate():
         button_run.pack_forget()
 
         button_run.config(
-            command=lambda cmd_line=wrapper_command + [f"{prefix}interpolate",
+            command=lambda cmd_line=wrapper_command + [
+                f"{prefix}interpolate",
                 "--input",
                 input_file,
                 "--type",
@@ -191,7 +197,8 @@ def phenology():
         label.configure(text=f"File Opened: {input_file}")
 
         button_run.config(
-            command=lambda cmd_line=wrapper_command + [f"{prefix}phenology",
+            command=lambda cmd_line=wrapper_command + [
+                f"{prefix}phenology",
                 "--input",
                 input_file,
             ]: subprocess.run(cmd_line),
