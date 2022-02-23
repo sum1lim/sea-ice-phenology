@@ -111,9 +111,9 @@ def interpolate():
     Window for timeseries interpolation
     """
 
-    def RUN(window, variable, input_file):
+    def RUN(variable, input_file):
         button_run = Button(
-            window,
+            interpolation_window,
             text="RUN",
             command=lambda cmd_line=[
                 "interpolate",
@@ -125,7 +125,7 @@ def interpolate():
         )
         button_run.pack(side="bottom")
 
-    def select_input(window, label):
+    def select_input(label):
         input_file = filedialog.askopenfilename(
             initialdir="./",
             title="Select a File",
@@ -133,18 +133,18 @@ def interpolate():
         )
         label.configure(text=f"File Opened: {input_file}")
 
-        variable = StringVar(window)
+        variable = StringVar(interpolation_window)
         variable.set("Interpolation Method")
         interpolation_method = OptionMenu(
-            window,
+            interpolation_window,
             variable,
             "linear",
             "slinear",
             "median",
             "gaussian",
             "random",
-            command=lambda window=window, variable=variable, input_file=input_file: RUN(
-                window, variable, input_file
+            command=lambda variable=variable, input_file=input_file: RUN(
+                variable, input_file
             ),
         )
         interpolation_method.pack()
@@ -158,9 +158,7 @@ def interpolate():
     button_explore = Button(
         FE_frame,
         text="Input File",
-        command=lambda window=interpolation_window, label=label_file_explorer: select_input(
-            window, label
-        ),
+        command=lambda label=label_file_explorer: select_input(label),
     )
     FE_frame.pack(side="top")
     button_explore.pack(side="left")
