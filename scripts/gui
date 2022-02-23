@@ -2,11 +2,8 @@
 import webbrowser
 import ee
 import subprocess
+from tkinter import filedialog
 from tkinter import *
-
-
-def OpenUrl(url):
-    webbrowser.open_new(url)
 
 
 def authenticate(window):
@@ -22,7 +19,7 @@ def authenticate(window):
     )
 
     entry = Entry(window, width=40)
-    entry.focus_set()
+    entry.insert(END, "Type in your token")
     entry.pack()
     button_ok = Button(
         window,
@@ -33,61 +30,64 @@ def authenticate(window):
     button_ok.pack(pady=20)
 
 
-def manual_retrieval(window):
-    def enter(entry_lat, entry_lon, entry_start, entry_end):
-        lat = entry_lat.get()
-        lon = entry_lon.get()
-        start = entry_start.get()
-        end = entry_end.get()
-
-        subprocess.run(
-            [
-                "get_timeseries",
-                "--coords",
-                f"{lon}",
-                f"{lat}",
-                "--start-date",
-                f"{start}",
-                "--end-date",
-                f"{end}",
-            ]
-        )
-        entry_lat.pack_forget()
-        entry_lon.pack_forget()
-        entry_start.pack_forget()
-        entry_end.pack_forget()
-        button_ok.pack_forget()
-
-    entry_lat = Entry(window, width=20)
-    entry_lon = Entry(window, width=20)
-    entry_start = Entry(window, width=20)
-    entry_end = Entry(window, width=20)
-
-    entry_lat.insert(END, "lat")
-    entry_lon.insert(END, "lon")
-    entry_start.insert(END, "Start (YYYY-MM-DD)")
-    entry_end.insert(END, "End (YYYY-MM-DD)")
-
-    entry_lat.pack()
-    entry_lon.pack()
-    entry_start.pack()
-    entry_end.pack()
-
-    button_ok = Button(
-        window,
-        text="Okay",
-        width=20,
-        command=lambda entry_lat=entry_lat, entry_lon=entry_lon, entry_start=entry_start, entry_end=entry_end: enter(
-            entry_lat, entry_lon, entry_start, entry_end
-        ),
-    )
-    button_ok.pack(pady=20, side="bottom")
-
-
 def MODIS_data():
     """
-    A new window for MODIS data retrieval
+    Window for MODIS data retrieval
     """
+
+    def OpenUrl(url):
+        webbrowser.open_new(url)
+
+    def manual_retrieval(window):
+        def enter(entry_lat, entry_lon, entry_start, entry_end):
+            lat = entry_lat.get()
+            lon = entry_lon.get()
+            start = entry_start.get()
+            end = entry_end.get()
+
+            subprocess.run(
+                [
+                    "get_timeseries",
+                    "--coords",
+                    lon,
+                    lat,
+                    "--start-date",
+                    start,
+                    "--end-date",
+                    end,
+                ]
+            )
+            entry_lat.pack_forget()
+            entry_lon.pack_forget()
+            entry_start.pack_forget()
+            entry_end.pack_forget()
+            button_ok.pack_forget()
+
+        entry_lat = Entry(window, width=20)
+        entry_lon = Entry(window, width=20)
+        entry_start = Entry(window, width=20)
+        entry_end = Entry(window, width=20)
+
+        entry_lat.insert(END, "lat")
+        entry_lon.insert(END, "lon")
+        entry_start.insert(END, "Start (YYYY-MM-DD)")
+        entry_end.insert(END, "End (YYYY-MM-DD)")
+
+        entry_lat.pack()
+        entry_lon.pack()
+        entry_start.pack()
+        entry_end.pack()
+
+        button_ok = Button(
+            window,
+            text="Okay",
+            width=20,
+            command=lambda entry_lat=entry_lat, entry_lon=entry_lon, entry_start=entry_start, entry_end=entry_end: enter(
+                entry_lat, entry_lon, entry_start, entry_end
+            ),
+        )
+        button_ok.pack(pady=20, side="bottom")
+
     MODIS_data_window = Tk()
     url = "https://sangwon.users.earthengine.app/view/seaicephenology"
 
@@ -106,16 +106,65 @@ def MODIS_data():
     button_authenticate.pack(side="top")
 
 
-# Function for opening the
-# file explorer window
-def browseFiles(label):
-    filename = filedialog.askopenfilename(
-        initialdir="./",
-        title="Select a File",
-        filetypes=(("CSV files", "*.csv*"), ("all files", "*.*")),
-    )
+def interpolate():
+    """
+    Window for timeseries interpolation
+    """
 
-    label.configure(text="File Opened: " + filename)
+    def RUN(window, variable, input_file):
+        button_run = Button(
+            window,
+            text="RUN",
+            command=lambda cmd_line=[
+                "interpolate",
+                "--input",
+                input_file,
+                "--type",
+                variable.get(),
+            ]: subprocess.run(cmd_line),
+        )
+        button_run.pack(side="bottom")
+
+    def select_input(window, label):
+        input_file = filedialog.askopenfilename(
+            initialdir="./",
+            title="Select a File",
+            filetypes=(("CSV files", "*.csv*"), ("all files", "*.*")),
+        )
+        label.configure(text=f"File Opened: {input_file}")
+
+        variable = StringVar(window)
+        variable.set("Interpolation Method")
+        interpolation_method = OptionMenu(
+            window,
+            variable,
+            "linear",
+            "slinear",
+            "median",
+            "gaussian",
+            "random",
+            command=lambda window=window, variable=variable, input_file=input_file: RUN(
+                window, variable, input_file
+            ),
+        )
+        interpolation_method.pack()
+
+    interpolation_window = Tk()
+
+    FE_frame = Frame(interpolation_window)
+
+    label_file_explorer = Label(FE_frame, text="File Opened: ", fg="blue")
+
+    button_explore = Button(
+        FE_frame,
+        text="Input File",
+        command=lambda window=interpolation_window, label=label_file_explorer: select_input(
+            window, label
+        ),
+    )
+    FE_frame.pack(side="top")
+    button_explore.pack(side="left")
+    label_file_explorer.pack(side="left")
 
 
 def main():
@@ -147,21 +196,15 @@ def main():
     button_MODIS = Button(main_window, text="Retrieve MODIS data", command=MODIS_data)
     button_MODIS.pack(side="top")
 
-    FE_frame = Frame(main_window)
-
-    label_file_explorer = Label(FE_frame, text="File Opened: ", fg="blue")
-
-    button_explore = Button(
-        FE_frame,
-        text="Browse Files",
-        command=lambda label=label_file_explorer: browseFiles(label),
+    button_interpolate = Button(
+        main_window,
+        text="Timeseries Interpolation",
+        command=interpolate,
     )
-    FE_frame.pack(side="top")
-    button_explore.pack(side="left")
-    label_file_explorer.pack(side="left")
+    button_interpolate.pack(side="top")
 
     button_exit = Button(main_window, text="Exit", command=exit)
-    button_exit.pack(side="top")
+    button_exit.pack(side="bottom")
 
     main_window.mainloop()
 
