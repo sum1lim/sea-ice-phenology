@@ -111,10 +111,10 @@ def interpolate():
     Window for timeseries interpolation
     """
 
-    def RUN(variable, input_file):
-        button_run = Button(
-            interpolation_window,
-            text="RUN",
+    def RUN(variable, input_file, button_run):
+        button_run.pack_forget()
+
+        button_run.config(
             command=lambda cmd_line=[
                 "interpolate",
                 "--input",
@@ -133,6 +133,8 @@ def interpolate():
         )
         label.configure(text=f"File Opened: {input_file}")
 
+        button_run = Button(interpolation_window, text="RUN")
+
         variable = StringVar(interpolation_window)
         variable.set("Interpolation Method")
         interpolation_method = OptionMenu(
@@ -143,8 +145,8 @@ def interpolate():
             "median",
             "gaussian",
             "random",
-            command=lambda variable=variable, input_file=input_file: RUN(
-                variable, input_file
+            command=lambda variable=variable, input_file=input_file, button_run=button_run: RUN(
+                variable, input_file, button_run
             ),
         )
         interpolation_method.pack()
@@ -159,6 +161,48 @@ def interpolate():
         FE_frame,
         text="Input File",
         command=lambda label=label_file_explorer: select_input(label),
+    )
+    FE_frame.pack(side="top")
+    button_explore.pack(side="left")
+    label_file_explorer.pack(side="left")
+
+
+def phenology():
+    """
+    Window for sea ice phenology detection
+    """
+
+    def select_input(label, button_run):
+        input_file = filedialog.askopenfilename(
+            initialdir="./",
+            title="Select a File",
+            filetypes=(("CSV files", "*.csv*"), ("all files", "*.*")),
+        )
+        label.configure(text=f"File Opened: {input_file}")
+
+        button_run.config(
+            command=lambda cmd_line=[
+                "phenology",
+                "--input",
+                input_file,
+            ]: subprocess.run(cmd_line),
+        )
+        button_run.pack(side="bottom")
+
+    phenology_window = Tk()
+
+    FE_frame = Frame(phenology_window)
+
+    label_file_explorer = Label(FE_frame, text="File Opened: ", fg="blue")
+
+    button_run = Button(phenology_window, text="RUN")
+
+    button_explore = Button(
+        FE_frame,
+        text="Input File",
+        command=lambda label=label_file_explorer, button_run=button_run: select_input(
+            label, button_run
+        ),
     )
     FE_frame.pack(side="top")
     button_explore.pack(side="left")
@@ -200,6 +244,13 @@ def main():
         command=interpolate,
     )
     button_interpolate.pack(side="top")
+
+    button_phenology = Button(
+        main_window,
+        text="Phenology Detection",
+        command=phenology,
+    )
+    button_phenology.pack(side="top")
 
     button_exit = Button(main_window, text="Exit", command=exit)
     button_exit.pack(side="bottom")
