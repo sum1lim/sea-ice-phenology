@@ -1,54 +1,107 @@
 #!/usr/bin/env python3
-import tkinter as tk
 import webbrowser
 import ee
 import subprocess
-from tkinter import filedialog
+from tkinter import *
 
 
 def OpenUrl(url):
     webbrowser.open_new(url)
 
 
-def enter(window, entry, pipe):
-    string = entry.get()
-
-    pipe.communicate(input=str.encode(f"{string}\n"))
-
-
 def authenticate(window):
+    def enter(entry, pipe):
+        string = entry.get()
+
+        pipe.communicate(input=str.encode(f"{string}\n"))
+        entry.pack_forget()
+        button_ok.pack_forget()
+
     pipe = subprocess.Popen(
         ["authenticate"], stdin=subprocess.PIPE, stdout=subprocess.PIPE
     )
 
-    entry = tk.Entry(window, width=40)
+    entry = Entry(window, width=40)
     entry.focus_set()
-    entry.pack(side="left")
-    button_ok = tk.Button(
+    entry.pack()
+    button_ok = Button(
         window,
         text="Okay",
         width=20,
-        command=lambda window=window, entry=entry, pipe=pipe: enter(
-            window, entry, pipe
+        command=lambda entry=entry, pipe=pipe: enter(entry, pipe),
+    )
+    button_ok.pack(pady=20)
+
+
+def manual_retrieval(window):
+    def enter(entry_lat, entry_lon, entry_start, entry_end):
+        lat = entry_lat.get()
+        lon = entry_lon.get()
+        start = entry_start.get()
+        end = entry_end.get()
+
+        subprocess.run(
+            [
+                "get_timeseries",
+                "--coords",
+                f"{lon}",
+                f"{lat}",
+                "--start-date",
+                f"{start}",
+                "--end-date",
+                f"{end}",
+            ]
+        )
+        entry_lat.pack_forget()
+        entry_lon.pack_forget()
+        entry_start.pack_forget()
+        entry_end.pack_forget()
+        button_ok.pack_forget()
+
+    entry_lat = Entry(window, width=20)
+    entry_lon = Entry(window, width=20)
+    entry_start = Entry(window, width=20)
+    entry_end = Entry(window, width=20)
+
+    entry_lat.insert(END, "lat")
+    entry_lon.insert(END, "lon")
+    entry_start.insert(END, "Start (YYYY-MM-DD)")
+    entry_end.insert(END, "End (YYYY-MM-DD)")
+
+    entry_lat.pack()
+    entry_lon.pack()
+    entry_start.pack()
+    entry_end.pack()
+
+    button_ok = Button(
+        window,
+        text="Okay",
+        width=20,
+        command=lambda entry_lat=entry_lat, entry_lon=entry_lon, entry_start=entry_start, entry_end=entry_end: enter(
+            entry_lat, entry_lon, entry_start, entry_end
         ),
-    ).pack(pady=20, side="left")
+    )
+    button_ok.pack(pady=20, side="bottom")
 
 
 def MODIS_data():
-    MODIS_data_window = tk.Tk()
+    """
+    A new window for MODIS data retrieval
+    """
+    MODIS_data_window = Tk()
     url = "https://sangwon.users.earthengine.app/view/seaicephenology"
 
-    button_MODIS = tk.Button(
+    button_MODIS = Button(
         MODIS_data_window,
         text="Access Google Earth Engine App",
         command=lambda aurl=url: OpenUrl(aurl),
     )
     button_MODIS.pack(side="top")
 
-    button_authenticate = tk.Button(
+    button_authenticate = Button(
         MODIS_data_window,
-        text="Authenticate Google Earth Engine Account",
-        command=lambda window=MODIS_data_window: authenticate(window),
+        text="Manual Retrieval",
+        command=lambda window=MODIS_data_window: manual_retrieval(window),
     )
     button_authenticate.pack(side="top")
 
@@ -66,14 +119,14 @@ def browseFiles(label):
 
 
 def main():
-    main_window = tk.Tk()
+    main_window = Tk()
     main_window.geometry("1000x500")
     main_window.config(background="white")
 
-    title_frame = tk.Frame(main_window, background="#D2E2FB", bd=1, relief="flat")
+    title_frame = Frame(main_window, background="#D2E2FB", bd=1, relief="flat")
     title_frame.pack()
 
-    title = tk.Label(
+    title = Label(
         title_frame,
         text="Sea Ice Phenology Detection\nby ICE Lab at University of Victoria",
         width=50,
@@ -84,16 +137,21 @@ def main():
     title.config(background="white")
     title.pack()
 
-    button_MODIS = tk.Button(
-        main_window, text="Retrieve MODIS data", command=MODIS_data
+    button_authenticate = Button(
+        main_window,
+        text="Authenticate Google Earth Engine Account",
+        command=lambda window=main_window: authenticate(window),
     )
+    button_authenticate.pack(side="top")
+
+    button_MODIS = Button(main_window, text="Retrieve MODIS data", command=MODIS_data)
     button_MODIS.pack(side="top")
 
-    FE_frame = tk.Frame(main_window)
+    FE_frame = Frame(main_window)
 
-    label_file_explorer = tk.Label(FE_frame, text="File Opened: ", fg="blue")
+    label_file_explorer = Label(FE_frame, text="File Opened: ", fg="blue")
 
-    button_explore = tk.Button(
+    button_explore = Button(
         FE_frame,
         text="Browse Files",
         command=lambda label=label_file_explorer: browseFiles(label),
@@ -102,7 +160,7 @@ def main():
     button_explore.pack(side="left")
     label_file_explorer.pack(side="left")
 
-    button_exit = tk.Button(main_window, text="Exit", command=exit)
+    button_exit = Button(main_window, text="Exit", command=exit)
     button_exit.pack(side="top")
 
     main_window.mainloop()
