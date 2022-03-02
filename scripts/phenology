@@ -14,15 +14,16 @@ from sea_ice_phenology.utils import interQuantileMask
 pd.options.mode.chained_assignment = None
 
 
-def coefficient_method(subset_length, sequence, band):
-    coefficient_li = [0 for _ in range(subset_length)]
+def coefficient_method(dataframe, band):
+    subset_length = 30
+    anomaly_li = [0 for _ in range(subset_length)]
     idx = subset_length
-    while idx < sequence.shape[0]:
-        subset_1 = sequence[idx - subset_length : idx][band].dropna()
-        subset_2 = sequence[idx : idx + subset_length][band].dropna()
-        notna_1 = sequence[idx - subset_length : idx][band].notna()
+    while idx < dataframe.shape[0]:
+        subset_1 = dataframe[idx - subset_length : idx][band].dropna()
+        subset_2 = dataframe[idx : idx + subset_length][band].dropna()
+        notna_1 = dataframe[idx - subset_length : idx][band].notna()
         index_1 = notna_1[notna_1].index.astype(np.int64)
-        notna_2 = sequence[idx : idx + subset_length][band].notna()
+        notna_2 = dataframe[idx : idx + subset_length][band].notna()
         index_2 = notna_2[notna_2].index.astype(np.int64)
 
         if (
@@ -42,13 +43,35 @@ def coefficient_method(subset_length, sequence, band):
             r1, _ = pearsonr(index_1, subset_1)
             r2, _ = pearsonr(index_2, subset_2)
 
-            coefficient_li.append(reg_1 * r1 - reg_2 * r2)
+            anomaly_li.append(reg_1 * r1 - reg_2 * r2)
         else:
-            coefficient_li.append(0)
+            anomaly_li.append(0)
 
         idx += 1
 
-    return coefficient_li
+    anomaly_li = gaussian_filter1d(anomaly_li, 7)
+    return anomaly_li
+
+
+def three_day_method(dataframe, band):
+    sequence = dataframe[band]
+    anomaly_li = [0 for _ in range(dataframe.shape[0])]
+
+    for idx, val in enumerate(sequence):
+        try:
+            first = val - sequence[idx + 1]
+            second = sequence[idx + 1] - sequence[idx + 2]
+            third = sequence[idx + 2] - sequence[idx + 3]
+        except IndexError:
+            continue
+
+        if first < 0 and second < 0 and third < 0:
+            anomaly_li[idx] = 1
+
+        if first > 0 and second > 0 and third > 0:
+            anomaly_li[idx + 3] = -1
+
+    return anomaly_li
 
 
 def main(args):
@@ -56,7 +79,6 @@ def main(args):
     ts_df["system:time_start"] = pd.to_datetime(ts_df["system:time_start"])
     ts_df.index = ts_df["system:time_start"]
     del ts_df["system:time_start"]
-    subset_length = 30
 
     for band in ts_df.columns:
         if band.endswith("interpolate") == False:
@@ -65,9 +87,10 @@ def main(args):
         tmp = ts_df.copy()
         tmp["Date"] = tmp.index
 
-        coefficient_li = coefficient_method(subset_length, tmp, band)
-
-        tmp["anomaly"] = gaussian_filter1d(coefficient_li, 7)
+        if args.type == "coefficient":
+            tmp["anomaly"] = coefficient_method(tmp, band)
+        elif args.type == "three":
+            tmp["anomaly"] = three_day_method(tmp, band)
 
         maxima = argrelextrema(tmp["anomaly"].to_numpy(), np.greater, order=30)
         minima = argrelextrema(tmp["anomaly"].to_numpy(), np.less, order=30)
@@ -148,6 +171,13 @@ if __name__ == "__main__":
         type=str,
         help="Path to time-series data file (csv)",
         required=True,
+    )
+    parser.add_argument(
+        "--type",
+        type=str,
+        choices=["coefficient", "three"],
+        default="coefficient",
+        help="Phenology detection method",
     )
 
     args = parser.parse_args()
