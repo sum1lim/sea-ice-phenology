@@ -188,7 +188,21 @@ def phenology():
     Window for sea ice phenology detection
     """
 
-    def select_input(label, button_run):
+    def RUN(variable, input_file, button_run):
+        button_run.pack_forget()
+
+        button_run.config(
+            command=lambda cmd_line=wrapper_command + [
+                f"{prefix}phenology",
+                "--input",
+                input_file,
+                "--type",
+                variable,
+            ]: subprocess.run(cmd_line),
+        )
+        button_run.pack(side="bottom")
+
+    def select_input(label):
         input_file = filedialog.askopenfilename(
             initialdir="./",
             title="Select a File",
@@ -196,14 +210,20 @@ def phenology():
         )
         label.configure(text=f"File Opened: {input_file}")
 
-        button_run.config(
-            command=lambda cmd_line=wrapper_command + [
-                f"{prefix}phenology",
-                "--input",
-                input_file,
-            ]: subprocess.run(cmd_line),
+        button_run = Button(phenology_window, text="RUN")
+
+        variable = StringVar(phenology_window)
+        variable.set("Phenology Method")
+        phenology_method = OptionMenu(
+            phenology_window,
+            variable,
+            "coefficient",
+            "three",
+            command=lambda variable=variable, input_file=input_file, button_run=button_run: RUN(
+                variable, input_file, button_run
+            ),
         )
-        button_run.pack(side="bottom")
+        phenology_method.pack()
 
     phenology_window = Tk()
 
@@ -211,14 +231,10 @@ def phenology():
 
     label_file_explorer = Label(FE_frame, text="File Opened: ", fg="blue")
 
-    button_run = Button(phenology_window, text="RUN")
-
     button_explore = Button(
         FE_frame,
         text="Input File",
-        command=lambda label=label_file_explorer, button_run=button_run: select_input(
-            label, button_run
-        ),
+        command=lambda label=label_file_explorer: select_input(label),
     )
     FE_frame.pack(side="top")
     button_explore.pack(side="left")
