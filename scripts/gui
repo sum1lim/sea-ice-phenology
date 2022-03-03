@@ -217,7 +217,7 @@ def phenology():
             phenology_window,
             variable,
             "coefficient",
-            "three",
+            "three-day",
             command=lambda variable=variable, input_file=input_file, button_run=button_run: RUN(
                 variable, input_file, button_run
             ),

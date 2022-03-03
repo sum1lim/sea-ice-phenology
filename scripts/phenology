@@ -101,7 +101,8 @@ def coefficient_method(dataframe, band):
 
 
 def three_day_method(dataframe, band):
-    sequence = dataframe[band]
+    sequence = pd.Series(gaussian_filter1d(dataframe[band], 3), index=dataframe.index)
+    sequence.loc[sequence.isnull()] = dataframe[band][sequence.isnull()]
     anomaly_li = [0 for _ in range(dataframe.shape[0])]
 
     for idx, val in enumerate(sequence):
@@ -112,14 +113,15 @@ def three_day_method(dataframe, band):
         except IndexError:
             continue
 
-        if first < 0 and second < 0 and third < 0:
-            anomaly_li[idx] = 1
-
-        if first > 0 and second > 0 and third > 0:
-            anomaly_li[idx] = -1
+        if (first < 0 and second < 0 and third < 0) or (
+            first > 0 and second > 0 and third > 0
+        ):
+            anomaly_li[idx] = first + second + third
 
     tmp = dataframe.copy()
     tmp["anomaly"] = anomaly_li
+    pd.set_option("display.max_rows", None)
+    tmp["anomaly"] = interQuantileMask(tmp["anomaly"], low=-1, middle=0, high=1)
 
     # Divide timeseries into freezing, transition and melt seasons
     melt_freeze_season(tmp, band)
@@ -147,7 +149,7 @@ def main(args):
 
         if args.type == "coefficient":
             tmp["phenology"] = coefficient_method(tmp, band)
-        elif args.type == "three":
+        elif args.type == "three-day":
             tmp["phenology"] = three_day_method(tmp, band)
 
         # Maker for plotting
@@ -197,7 +199,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--type",
         type=str,
-        choices=["coefficient", "three"],
+        choices=["coefficient", "three-day"],
         default="coefficient",
         help="Phenology detection method",
     )
