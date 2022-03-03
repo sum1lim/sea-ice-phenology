@@ -49,8 +49,44 @@ def coefficient_method(dataframe, band):
 
         idx += 1
 
-    anomaly_li = gaussian_filter1d(anomaly_li, 7)
-    return anomaly_li
+    tmp = dataframe.copy()
+    tmp["anomaly"] = gaussian_filter1d(anomaly_li, 7)
+
+    maxima = argrelextrema(tmp["anomaly"].to_numpy(), np.greater, order=30)
+    minima = argrelextrema(tmp["anomaly"].to_numpy(), np.less, order=30)
+    tmp["maxima"] = [1 if i in maxima[0] else 0 for i in range(len(tmp))]
+    tmp["minima"] = [1 if i in minima[0] else 0 for i in range(len(tmp))]
+
+    tmp["anomaly"] = interQuantileMask(tmp["anomaly"], low=-1, middle=0, high=1)
+
+    # Divide timeseries into freezing, transition and melt seasons
+    filtered = pd.Series(gaussian_filter1d(tmp[band], 10), index=tmp.index)
+    tmp["freeze_melt"] = tmp[band].copy()
+    tmp["freeze_melt"].loc[filtered.dropna().index] = filtered[filtered.dropna().index]
+    upper_thresh = (max(tmp["freeze_melt"]) - min(tmp["freeze_melt"])) * 0.7 + min(
+        tmp["freeze_melt"]
+    )
+    lower_thresh = (max(tmp["freeze_melt"]) - min(tmp["freeze_melt"])) * 0.1 + min(
+        tmp["freeze_melt"]
+    )
+    tmp["freeze_melt"].mask(tmp["freeze_melt"] < lower_thresh, -3, inplace=True)
+    tmp["freeze_melt"].mask(
+        (tmp["freeze_melt"] > lower_thresh) & (tmp["freeze_melt"] < upper_thresh),
+        0,
+        inplace=True,
+    )
+    tmp["freeze_melt"].mask(tmp["freeze_melt"] > upper_thresh, 3, inplace=True)
+
+    # Detect dates with high probability of phenology
+    tmp["phenology"] = (
+        tmp["anomaly"] * tmp["maxima"]
+        + tmp["anomaly"] * tmp["minima"]
+        + tmp["freeze_melt"]
+    )
+    tmp["phenology"].mask(tmp["phenology"] == 3, 0, inplace=True)
+    tmp["phenology"].mask(tmp["phenology"] == -3, 0, inplace=True)
+
+    return tmp["phenology"]
 
 
 def three_day_method(dataframe, band):
@@ -88,45 +124,9 @@ def main(args):
         tmp["Date"] = tmp.index
 
         if args.type == "coefficient":
-            tmp["anomaly"] = coefficient_method(tmp, band)
+            tmp["phenology"] = coefficient_method(tmp, band)
         elif args.type == "three":
-            tmp["anomaly"] = three_day_method(tmp, band)
-
-        maxima = argrelextrema(tmp["anomaly"].to_numpy(), np.greater, order=30)
-        minima = argrelextrema(tmp["anomaly"].to_numpy(), np.less, order=30)
-        tmp["maxima"] = [1 if i in maxima[0] else 0 for i in range(len(tmp))]
-        tmp["minima"] = [1 if i in minima[0] else 0 for i in range(len(tmp))]
-
-        tmp["anomaly"] = interQuantileMask(tmp["anomaly"], low=-1, middle=0, high=1)
-
-        # Divide timeseries into freezing, transition and melt seasons
-        filtered = pd.Series(gaussian_filter1d(tmp[band], 10), index=tmp.index)
-        tmp["freeze_melt"] = tmp[band].copy()
-        tmp["freeze_melt"].loc[filtered.dropna().index] = filtered[
-            filtered.dropna().index
-        ]
-        upper_thresh = (max(tmp["freeze_melt"]) - min(tmp["freeze_melt"])) * 0.7 + min(
-            tmp["freeze_melt"]
-        )
-        lower_thresh = (max(tmp["freeze_melt"]) - min(tmp["freeze_melt"])) * 0.1 + min(
-            tmp["freeze_melt"]
-        )
-        tmp["freeze_melt"].mask(tmp["freeze_melt"] < lower_thresh, -3, inplace=True)
-        tmp["freeze_melt"].mask(
-            (tmp["freeze_melt"] > lower_thresh) & (tmp["freeze_melt"] < upper_thresh),
-            0,
-            inplace=True,
-        )
-        tmp["freeze_melt"].mask(tmp["freeze_melt"] > upper_thresh, 3, inplace=True)
-
-        # Detect dates with high probability of phenology
-        tmp["phenology"] = (
-            tmp["anomaly"] * tmp["maxima"]
-            + tmp["anomaly"] * tmp["minima"]
-            + tmp["freeze_melt"]
-        )
-        tmp["phenology"].mask(tmp["phenology"] == 3, 0, inplace=True)
-        tmp["phenology"].mask(tmp["phenology"] == -3, 0, inplace=True)
+            tmp["phenology"] = three_day_method(tmp, band)
 
         # Maker for plotting
         tmp["marker"] = tmp["phenology"].abs()
