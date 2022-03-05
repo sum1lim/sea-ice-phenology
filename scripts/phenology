@@ -15,11 +15,8 @@ pd.options.mode.chained_assignment = None
 
 
 def melt_freeze_season(dataframe, band):
-    filtered = pd.Series(gaussian_filter1d(dataframe[band], 10), index=dataframe.index)
     dataframe["freeze_melt"] = dataframe[band].copy()
-    dataframe["freeze_melt"].loc[filtered.dropna().index] = filtered[
-        filtered.dropna().index
-    ]
+
     upper_thresh = (
         max(dataframe["freeze_melt"]) - min(dataframe["freeze_melt"])
     ) * 0.7 + min(dataframe["freeze_melt"])
