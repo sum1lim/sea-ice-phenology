@@ -8,6 +8,7 @@ from sea_ice_phenology.interpolation import (
     gaussian_interpolation,
     median_interpolation,
     random_interpolation,
+    hampel_filter,
 )
 
 
@@ -45,6 +46,7 @@ def main(args):
             tmp[band] = random_interpolation(tmp[band])
 
         tmp[band] = interQuantileMask(tmp[band], low="", high="")
+        tmp[band], _ = hampel_filter(tmp[band], 9, n_sigmas=1)
 
         sns.set_style("dark")
         _, _ = plt.subplots(figsize=(20, 4))
