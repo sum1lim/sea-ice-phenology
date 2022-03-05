@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import statsmodels.api as sm
 from sklearn.linear_model import LinearRegression
 from scipy.stats import pearsonr
 from scipy.ndimage import gaussian_filter1d
@@ -12,6 +13,30 @@ from scipy.signal import argrelextrema
 from sea_ice_phenology.utils import interQuantileMask
 
 pd.options.mode.chained_assignment = None
+
+
+def hampel_filter(input_series, window_size, n_sigmas=3):
+    """
+    By Eryk Lewinson: https://towardsdatascience.com/outlier-detection-with-hampel-filter-85ddf523c73d
+    """
+
+    n = len(input_series)
+    new_series = input_series.copy()
+    k = 1.4826  # scale factor for Gaussian distribution
+
+    indices = []
+
+    # possibly use np.nanmedian
+    for i in range((window_size), (n - window_size)):
+        x0 = np.median(input_series[(i - window_size) : (i + window_size)])
+        S0 = k * np.median(
+            np.abs(input_series[(i - window_size) : (i + window_size)] - x0)
+        )
+        if np.abs(input_series[i] - x0) > n_sigmas * S0:
+            new_series[i] = x0
+            indices.append(i)
+
+    return new_series, indices
 
 
 def melt_freeze_season(dataframe, band):
@@ -98,8 +123,17 @@ def coefficient_method(dataframe, band):
 
 
 def three_day_method(dataframe, band):
-    sequence = pd.Series(gaussian_filter1d(dataframe[band], 3), index=dataframe.index)
-    sequence.loc[sequence.isnull()] = dataframe[band][sequence.isnull()]
+    # Hampel Filtering
+    sequence, _ = hampel_filter(dataframe[band], 9, n_sigmas=1)
+    # Lowess Filtering
+    lowess = sm.nonparametric.lowess
+    sequence = lowess(
+        exog=sequence.index.astype(int),
+        endog=sequence,
+        return_sorted=False,
+        frac=5 / len(sequence),
+    )
+
     anomaly_li = [0 for _ in range(dataframe.shape[0])]
 
     for idx, val in enumerate(sequence):
