@@ -168,8 +168,7 @@ def three_day_method(dataframe, band):
 def main(args):
     ts_df = pd.read_csv(args.input, thousands=",")
     ts_df["system:time_start"] = pd.to_datetime(ts_df["system:time_start"])
-    ts_df.index = ts_df["system:time_start"]
-    del ts_df["system:time_start"]
+    ts_df = ts_df.groupby("system:time_start").mean()
 
     for band in ts_df.columns:
         if band.endswith("interpolate") == False:
