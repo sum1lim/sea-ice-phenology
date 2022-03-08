@@ -13,6 +13,7 @@ from scipy.signal import argrelextrema
 from sea_ice_phenology.utils import interQuantileMask
 
 pd.options.mode.chained_assignment = None
+lowess = sm.nonparametric.lowess
 
 
 def hampel_filter(input_series, window_size, n_sigmas=3):
@@ -63,15 +64,27 @@ def melt_freeze_season(dataframe, band):
 
 
 def coefficient_method(dataframe, band):
+    # Hampel Filtering
+    sequence, _ = hampel_filter(dataframe[band], 9, n_sigmas=1)
+    # Lowess Filtering
+    sequence = pd.Series(
+        lowess(
+            exog=sequence.index.astype(int),
+            endog=sequence,
+            return_sorted=False,
+            frac=5 / len(sequence),
+        )
+    )
+
     subset_length = 30
     anomaly_li = [0 for _ in range(subset_length)]
     idx = subset_length
     while idx < dataframe.shape[0]:
-        subset_1 = dataframe[idx - subset_length : idx][band].dropna()
-        subset_2 = dataframe[idx : idx + subset_length][band].dropna()
-        notna_1 = dataframe[idx - subset_length : idx][band].notna()
+        subset_1 = sequence[idx - subset_length : idx].dropna()
+        subset_2 = sequence[idx : idx + subset_length].dropna()
+        notna_1 = sequence[idx - subset_length : idx].notna()
         index_1 = notna_1[notna_1].index.astype(np.int64)
-        notna_2 = dataframe[idx : idx + subset_length][band].notna()
+        notna_2 = sequence[idx : idx + subset_length].notna()
         index_2 = notna_2[notna_2].index.astype(np.int64)
 
         if (
@@ -98,7 +111,7 @@ def coefficient_method(dataframe, band):
         idx += 1
 
     tmp = dataframe.copy()
-    tmp["anomaly"] = gaussian_filter1d(anomaly_li, 7)
+    tmp["anomaly"] = anomaly_li
 
     maxima = argrelextrema(tmp["anomaly"].to_numpy(), np.greater, order=30)
     minima = argrelextrema(tmp["anomaly"].to_numpy(), np.less, order=30)
@@ -126,7 +139,6 @@ def three_day_method(dataframe, band):
     # Hampel Filtering
     sequence, _ = hampel_filter(dataframe[band], 9, n_sigmas=1)
     # Lowess Filtering
-    lowess = sm.nonparametric.lowess
     sequence = lowess(
         exog=sequence.index.astype(int),
         endog=sequence,
