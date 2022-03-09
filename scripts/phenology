@@ -75,7 +75,7 @@ def coefficient_method(dataframe, band):
         )
     )
 
-    subset_length = 30
+    subset_length = 15
     anomaly_li = [0 for _ in range(subset_length)]
     idx = subset_length
     while idx < dataframe.shape[0]:
