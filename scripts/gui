@@ -126,21 +126,29 @@ def interpolate():
     Window for timeseries interpolation
     """
 
-    def RUN(variable, input_file, button_run):
-        button_run.pack_forget()
-
-        button_run.config(
-            command=lambda cmd_line=wrapper_command + [
-                f"{prefix}interpolate",
-                "--input",
-                input_file,
-                "--type",
-                variable,
-            ]: subprocess.run(cmd_line),
-        )
-        button_run.pack(side="bottom")
-
     def select_input(label):
+        def run_and_forget(cmd_line, button_run):
+            try:
+                subprocess.run(cmd_line)
+            except Exception as e:
+                button_run.forget()
+                interpolation_method.forget()
+                raise (e)
+
+        def RUN(variable, input_file, button_run):
+            button_run.pack_forget()
+
+            button_run.config(
+                command=lambda cmd_line=wrapper_command + [
+                    f"{prefix}interpolate",
+                    "--input",
+                    input_file,
+                    "--type",
+                    variable,
+                ]: run_and_forget(cmd_line, button_run),
+            )
+            button_run.pack(side="bottom")
+
         input_file = filedialog.askopenfilename(
             initialdir="./",
             title="Select a File",
@@ -187,21 +195,29 @@ def phenology():
     Window for sea ice phenology detection
     """
 
-    def RUN(variable, input_file, button_run):
-        button_run.pack_forget()
-
-        button_run.config(
-            command=lambda cmd_line=wrapper_command + [
-                f"{prefix}phenology",
-                "--input",
-                input_file,
-                "--type",
-                variable,
-            ]: subprocess.run(cmd_line),
-        )
-        button_run.pack(side="bottom")
-
     def select_input(label):
+        def run_and_forget(cmd_line, button_run):
+            try:
+                subprocess.run(cmd_line)
+            except Exception as e:
+                button_run.forget()
+                phenology_method.forget()
+                raise (e)
+
+        def RUN(variable, input_file, button_run):
+            button_run.pack_forget()
+
+            button_run.config(
+                command=lambda cmd_line=wrapper_command + [
+                    f"{prefix}phenology",
+                    "--input",
+                    input_file,
+                    "--type",
+                    variable,
+                ]: run_and_forget(cmd_line, button_run),
+            )
+            button_run.pack(side="bottom")
+
         input_file = filedialog.askopenfilename(
             initialdir="./",
             title="Select a File",
