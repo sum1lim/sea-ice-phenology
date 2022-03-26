@@ -10,27 +10,32 @@ def getQABits(number, start, end):
     bit_mask = 0
     while i < 16:
         if not i < start and not i > end:
-            bit_mask += 2**i
+            bit_mask += 2 ** i
         i += 1
 
     return number & bit_mask
 
 
-def id_img_dict(img_collection, roi, band):
-    ret_dict = {}
-    img_li = img_collection.toList(img_collection.size())
-    for i in tqdm(range(img_collection.size().getInfo())):
-        id = ee.Image(img_li.get(i)).id().getInfo()
-        try:
-            ret_dict[id] = (
-                ee.Image(img_li.get(i))
-                .sample(roi)
-                .getInfo()["features"][0]["properties"][band]
-            )
-        except IndexError:
-            continue
+def id_pixel_dict(pixels, bands):
+    if type(bands) == str:
+        bands = [bands]
 
-    return ret_dict
+    pix_li = pixels.getInfo()
+    id_idx = pix_li[0].index("id")
+    band_idx_li = [pix_li[0].index(band) for band in bands]
+    del pix_li[0]
+
+    ret_dicts = [{} for _ in range(len(bands))]
+    for pixel in tqdm(pix_li):
+        key = pixel[id_idx]
+        for i, band_idx in enumerate(band_idx_li):
+            if pixel[band_idx] != None:
+                ret_dicts[i][key] = pixel[band_idx]
+
+    if len(ret_dicts) == 1:
+        return ret_dicts[0]
+    else:
+        return tuple(ret_dicts)
 
 
 def main(args):
@@ -41,27 +46,35 @@ def main(args):
     modis = (
         ee.ImageCollection("MODIS/006/MOD09GQ")
         .filterDate(args.start_date, args.end_date)
-        .filterBounds(roi)
         .select(["sur_refl_b01", "sur_refl_b02"], ["B1", "B2"])
+        .getRegion(roi, 0.1)
     )
     modis_qa = (
         ee.ImageCollection("MODIS/006/MOD09GA")
         .filterDate(args.start_date, args.end_date)
-        .filterBounds(roi)
-        .select("state_1km")
+        .select("state_1km", "SolarZenith")
+        .getRegion(roi, 0.1)
+    )
+    landsat = (
+        ee.ImageCollection("LANDSAT/LC08/C02/T1_TOA")
+        .filterDate(args.start_date, args.end_date)
+        .select(["B4", "B5", "QA_PIXEL"], ["B1", "B2", "QA"])
+        .getRegion(roi, 0.1)
     )
 
-    qa_dict = id_img_dict(modis_qa, roi, "state_1km")
-    B1_dict = id_img_dict(modis, roi, "B1")
-    B2_dict = id_img_dict(modis, roi, "B2")
+    qa_dict, solar_dict = id_pixel_dict(modis_qa, ["state_1km", "SolarZenith"])
+    B1_dict, B2_dict = id_pixel_dict(modis, ["B1", "B2"])
+
     with open("./data/output.csv", "w") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["system:time_start", "B1", "B2"])
         for k, v in qa_dict.items():
-            if getQABits(v, 0, 1) == 0:
-                writer.writerow([k.replace("_", "-"), B1_dict[k], B2_dict[k]])
-            else:
-                writer.writerow([k.replace("_", "-"), "", ""])
+            cloud_qa = getQABits(v, 0, 1)
+            if (cloud_qa == 0 or cloud_qa == 3) and solar_dict[k] <= 8600:
+                try:
+                    writer.writerow([k.replace("_", "-"), B1_dict[k], B2_dict[k]])
+                except KeyError:
+                    continue
 
 
 if __name__ == "__main__":
