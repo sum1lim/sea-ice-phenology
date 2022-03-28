@@ -156,23 +156,24 @@ def interpolate():
         )
         label.configure(text=f"File Opened: {input_file}")
 
-        button_run = Button(interpolation_window, text="RUN")
+        if input_file != ():
+            button_run = Button(interpolation_window, text="RUN")
 
-        variable = StringVar(interpolation_window)
-        variable.set("Interpolation Method")
-        interpolation_method = OptionMenu(
-            interpolation_window,
-            variable,
-            "linear",
-            "slinear",
-            "median",
-            "gaussian",
-            "random",
-            command=lambda variable=variable, input_file=input_file, button_run=button_run: RUN(
-                variable, input_file, button_run
-            ),
-        )
-        interpolation_method.pack()
+            variable = StringVar(interpolation_window)
+            variable.set("Interpolation Method")
+            interpolation_method = OptionMenu(
+                interpolation_window,
+                variable,
+                "random",
+                "median",
+                "linear",
+                "slinear",
+                "gaussian",
+                command=lambda variable=variable, input_file=input_file, button_run=button_run: RUN(
+                    variable, input_file, button_run
+                ),
+            )
+            interpolation_method.pack()
 
     interpolation_window = Tk()
 
@@ -225,20 +226,20 @@ def phenology():
         )
         label.configure(text=f"File Opened: {input_file}")
 
-        button_run = Button(phenology_window, text="RUN")
+        if input_file != ():
+            button_run = Button(phenology_window, text="RUN")
 
-        variable = StringVar(phenology_window)
-        variable.set("Phenology Method")
-        phenology_method = OptionMenu(
-            phenology_window,
-            variable,
-            "coefficient",
-            "three-day",
-            command=lambda variable=variable, input_file=input_file, button_run=button_run: RUN(
-                variable, input_file, button_run
-            ),
-        )
-        phenology_method.pack()
+            variable = StringVar(phenology_window)
+            variable.set("Phenology Method")
+            phenology_method = OptionMenu(
+                phenology_window,
+                variable,
+                "slope-diff",
+                command=lambda variable=variable, input_file=input_file, button_run=button_run: RUN(
+                    variable, input_file, button_run
+                ),
+            )
+            phenology_method.pack()
 
     phenology_window = Tk()
 

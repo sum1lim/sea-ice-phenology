@@ -62,7 +62,7 @@ def melt_freeze_season(dataframe, band):
     )
 
 
-def coefficient_method(dataframe, band):
+def slope_diff_method(dataframe, band):
     # Hampel Filtering
     sequence, _ = hampel_filter(dataframe[band], 9, n_sigmas=1)
     # Lowess Filtering
@@ -188,8 +188,8 @@ def main(args):
         tmp = ts_df.copy()
         tmp["Date"] = tmp.index
 
-        if args.type == "coefficient":
-            tmp["phenology"] = coefficient_method(tmp, band)
+        if args.type == "slope-diff":
+            tmp["phenology"] = slope_diff_method(tmp, band)
         elif args.type == "three-day":
             tmp["phenology"] = three_day_method(tmp, band)
 
@@ -240,8 +240,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--type",
         type=str,
-        choices=["coefficient", "three-day"],
-        default="coefficient",
+        choices=["slope-diff", "three-day"],
+        default="slope-diff",
         help="Phenology detection method",
     )
 
