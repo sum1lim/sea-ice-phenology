@@ -33,10 +33,7 @@ pip install .
 
 ## Graphical User Interface (GUI)
 #### Windows
-```
-# Must run the following at the parent directory (e.g. @ sea-ice-phenology)
-python ./scripts/gui
-```
+Double-click on `gui.bat`
 #### Linux & OSX
 ```
 gui
