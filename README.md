@@ -43,5 +43,40 @@ Double-click on `gui.bat`
 gui
 ```
 ## Command-line User Interface (CLI)
+#### Authenticating Google Earth Engine Credentials
+```
+authenticate
+```
+#### Get Time Series
+```
+get_timeseries --coords COORDS COORDS --start-date START_DATE --end-date END_DATE --output OUTPUT
 
+optional arguments:
+  -h, --help            show this help message and exit
+  --coords COORDS COORDS
+                        Area of Interest (AOI) defined by lon, lat coordiates
+  --start-date START_DATE
+                        YYYY-MM-DD
+  --end-date END_DATE   YYYY-MM-DD
+  --output OUTPUT       Output file path
+```
+#### Time-Series Interpolation
+```
+python .\scripts\interpolate --input INPUT [--type {linear,slinear,median,gaussian,random}]
 
+optional arguments:
+  -h, --help            show this help message and exit
+  --input INPUT         Path to time-series data file (csv)
+  --type {linear,slinear,median,gaussian,random}
+                        Interpolation type
+```
+#### Phenology Detection
+```
+phenology --input INPUT [--type {slope-diff,three-day}]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --input INPUT         Path to time-series data file (csv)
+  --type {slope-diff,three-day}
+                        Phenology detection method
+```
