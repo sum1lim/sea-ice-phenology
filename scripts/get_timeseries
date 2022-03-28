@@ -92,7 +92,7 @@ def main(args):
             except KeyError:
                 continue
 
-    with open("./data/output.csv", "w") as csvfile:
+    with open(args.output, "w") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["system:time_start", "B1", "B2"])
         for k in sorted(output_dict.keys()):
@@ -119,6 +119,12 @@ if __name__ == "__main__":
         "--end-date",
         type=str,
         help="YYYY-MM-DD",
+        required=True,
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        help="Output file path",
         required=True,
     )
 

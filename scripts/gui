@@ -53,11 +53,12 @@ def MODIS_data():
         webbrowser.open_new(url)
 
     def manual_retrieval(window):
-        def enter(entry_lat, entry_lon, entry_start, entry_end):
+        def enter(entry_lat, entry_lon, entry_start, entry_end, output_path):
             lat = entry_lat.get()
             lon = entry_lon.get()
             start = entry_start.get()
             end = entry_end.get()
+            output = output_path.get()
 
             subprocess.run(
                 wrapper_command
@@ -70,6 +71,8 @@ def MODIS_data():
                     start,
                     "--end-date",
                     end,
+                    "--output",
+                    output,
                 ]
             )
             entry_lat.pack_forget()
@@ -77,28 +80,32 @@ def MODIS_data():
             entry_start.pack_forget()
             entry_end.pack_forget()
             button_ok.pack_forget()
+            output_path.pack_forget()
 
         entry_lat = Entry(window, width=20)
         entry_lon = Entry(window, width=20)
         entry_start = Entry(window, width=20)
         entry_end = Entry(window, width=20)
+        output_path = Entry(window, width=20)
 
         entry_lat.insert(END, "lat")
         entry_lon.insert(END, "lon")
         entry_start.insert(END, "Start (YYYY-MM-DD)")
         entry_end.insert(END, "End (YYYY-MM-DD)")
+        output_path.insert(END, "./data/output.csv")
 
         entry_lat.pack()
         entry_lon.pack()
         entry_start.pack()
         entry_end.pack()
+        output_path.pack()
 
         button_ok = Button(
             window,
             text="Okay",
             width=20,
-            command=lambda entry_lat=entry_lat, entry_lon=entry_lon, entry_start=entry_start, entry_end=entry_end: enter(
-                entry_lat, entry_lon, entry_start, entry_end
+            command=lambda entry_lat=entry_lat, entry_lon=entry_lon, entry_start=entry_start, entry_end=entry_end, output_path=output_path: enter(
+                entry_lat, entry_lon, entry_start, entry_end, output_path
             ),
         )
         button_ok.pack(pady=20, side="bottom")
