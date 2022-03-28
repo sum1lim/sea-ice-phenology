@@ -62,19 +62,41 @@ def main(args):
         .getRegion(roi, 0.1)
     )
 
-    qa_dict, solar_dict = id_pixel_dict(modis_qa, ["state_1km", "SolarZenith"])
-    B1_dict, B2_dict = id_pixel_dict(modis, ["B1", "B2"])
+    modis_qa_dict, solar_dict = id_pixel_dict(modis_qa, ["state_1km", "SolarZenith"])
+    modis_B1_dict, modis_B2_dict = id_pixel_dict(modis, ["B1", "B2"])
+    landsat_B1_dict, landsat_B2_dict, landsat_qa_dict = id_pixel_dict(
+        landsat, ["B1", "B2", "QA"]
+    )
+
+    output_dict = {}
+    for k, v in landsat_qa_dict.items():
+        cloud_qa = getQABits(v, 3, 3)
+        if cloud_qa == 0:
+            try:
+                date = k.split("_")[-1]
+                output_dict[f"{date[0:4]}-{date[4:6]}-{date[6:8]}"] = [
+                    landsat_B1_dict[k],
+                    landsat_B2_dict[k],
+                ]
+            except KeyError:
+                continue
+
+    for k, v in modis_qa_dict.items():
+        cloud_qa = getQABits(v, 0, 1)
+        if (cloud_qa == 0 or cloud_qa == 3) and solar_dict[k] <= 8600:
+            try:
+                output_dict[k.replace("_", "-")] = [
+                    modis_B1_dict[k] / 10000,
+                    modis_B2_dict[k] / 10000,
+                ]
+            except KeyError:
+                continue
 
     with open("./data/output.csv", "w") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["system:time_start", "B1", "B2"])
-        for k, v in qa_dict.items():
-            cloud_qa = getQABits(v, 0, 1)
-            if (cloud_qa == 0 or cloud_qa == 3) and solar_dict[k] <= 8600:
-                try:
-                    writer.writerow([k.replace("_", "-"), B1_dict[k], B2_dict[k]])
-                except KeyError:
-                    continue
+        for k in sorted(output_dict.keys()):
+            writer.writerow([k, output_dict[k][0], output_dict[k][1]])
 
 
 if __name__ == "__main__":
