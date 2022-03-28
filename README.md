@@ -5,7 +5,11 @@ Sea Ice Phenology Detection Developed by the ICE Remote Sensing Lab at Universit
 
 ## Getting Started
 ### Downloading the Repository
-Download this repository using the green `Code` button at the top right
+Download this repository using the green `Code` button at the top right 
+OR
+```
+git clone https://github.com/sum1lim/sea-ice-phenology.git
+```
 
 ### Install the Package in a Python Virtual Environment
 
