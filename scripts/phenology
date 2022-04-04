@@ -77,6 +77,7 @@ def slope_diff_method(dataframe, band):
 
     subset_length = 15
     anomaly_li = [0 for _ in range(subset_length)]
+    median_diff_li = [0 for _ in range(subset_length)]
     idx = subset_length
     while idx < dataframe.shape[0]:
         subset_1 = sequence[idx - subset_length : idx].dropna()
@@ -103,14 +104,17 @@ def slope_diff_method(dataframe, band):
             r1, _ = pearsonr(index_1, subset_1)
             r2, _ = pearsonr(index_2, subset_2)
 
-            anomaly_li.append(reg_1 * r1 - reg_2 * r2)
+            anomaly_li.append((reg_1 * r1 - reg_2 * r2))
+            median_diff_li.append(np.sign(subset_1.median() - subset_2.median()))
         else:
             anomaly_li.append(0)
+            median_diff_li.append(0)
 
         idx += 1
 
     tmp = dataframe.copy()
     tmp["anomaly"] = anomaly_li
+    tmp["median_diff"] = median_diff_li
 
     maxima = argrelextrema(tmp["anomaly"].to_numpy(), np.greater, order=30)
     minima = argrelextrema(tmp["anomaly"].to_numpy(), np.less, order=30)
@@ -128,50 +132,27 @@ def slope_diff_method(dataframe, band):
         + tmp["anomaly"] * tmp["minima"]
         + tmp["freeze_melt"]
     )
-    tmp["phenology"].mask(tmp["phenology"] == 3, 0, inplace=True)
-    tmp["phenology"].mask(tmp["phenology"] == -3, 0, inplace=True)
 
-    return tmp["phenology"]
-
-
-def three_day_method(dataframe, band):
-    # Hampel Filtering
-    sequence, _ = hampel_filter(dataframe[band], 9, n_sigmas=1)
-    # Lowess Filtering
-    sequence = lowess(
-        exog=sequence.index.astype(int),
-        endog=sequence,
-        return_sorted=False,
-        frac=5 / len(sequence),
+    # Define names for phenology
+    tmp["phenology"].mask(
+        (tmp["phenology"] == 2) & (tmp["median_diff"] > 0), "MO", inplace=True
+    )
+    tmp["phenology"].mask(
+        (tmp["phenology"] == 1) & (tmp["median_diff"] > 0), "PO", inplace=True
+    )
+    tmp["phenology"].mask(
+        (tmp["phenology"] == -1) & (tmp["median_diff"] > 0), "PD", inplace=True
+    )
+    tmp["phenology"].mask(
+        (tmp["phenology"] == -2) & (tmp["median_diff"] > 0), "OW", inplace=True
+    )
+    tmp["phenology"].mask(
+        (tmp["phenology"] == -4) & (tmp["median_diff"] < 0), "FO", inplace=True
     )
 
-    anomaly_li = [0 for _ in range(dataframe.shape[0])]
-
-    for idx, val in enumerate(sequence):
-        try:
-            first = val - sequence[idx + 1]
-            second = sequence[idx + 1] - sequence[idx + 2]
-            third = sequence[idx + 2] - sequence[idx + 3]
-        except IndexError:
-            continue
-
-        if (first < 0 and second < 0 and third < 0) or (
-            first > 0 and second > 0 and third > 0
-        ):
-            anomaly_li[idx] = first + second + third
-
-    tmp = dataframe.copy()
-    tmp["anomaly"] = anomaly_li
-    pd.set_option("display.max_rows", None)
-    tmp["anomaly"] = interQuantileMask(tmp["anomaly"], low=-1, middle=0, high=1)
-
-    # Divide timeseries into freezing, transition and melt seasons
-    melt_freeze_season(tmp, band)
-
-    # Detect dates with high probability of phenology
-    tmp["phenology"] = tmp["anomaly"] + tmp["freeze_melt"]
-    tmp["phenology"].mask(tmp["phenology"] == 3, 0, inplace=True)
-    tmp["phenology"].mask(tmp["phenology"] == -3, 0, inplace=True)
+    tmp["phenology"].mask(
+        tmp["phenology"].astype(str).str.isalpha() == False, "", inplace=True
+    )
 
     return tmp["phenology"]
 
@@ -188,24 +169,11 @@ def main(args):
         tmp = ts_df.copy()
         tmp["Date"] = tmp.index
 
-        if args.type == "slope-diff":
-            tmp["phenology"] = slope_diff_method(tmp, band)
-        elif args.type == "three-day":
-            tmp["phenology"] = three_day_method(tmp, band)
+        tmp["phenology"] = slope_diff_method(tmp, band)
 
         # Maker for plotting
-        tmp["marker"] = tmp["phenology"].abs()
-        tmp["marker"].mask(tmp["marker"] > 0, "Phenology", inplace=True)
-        tmp["marker"].mask(tmp["marker"] == 0, "", inplace=True)
-
-        # Define names for phenology
-        tmp["phenology"].mask(tmp["phenology"] == 0, "", inplace=True)
-        tmp["phenology"].mask(tmp["phenology"] == 4, "FU", inplace=True)
-        tmp["phenology"].mask(tmp["phenology"] == 2, "MO", inplace=True)
-        tmp["phenology"].mask(tmp["phenology"] == 1, "PO", inplace=True)
-        tmp["phenology"].mask(tmp["phenology"] == -1, "PD", inplace=True)
-        tmp["phenology"].mask(tmp["phenology"] == -2, "OW", inplace=True)
-        tmp["phenology"].mask(tmp["phenology"] == -4, "FO", inplace=True)
+        tmp["marker"] = tmp["phenology"].copy()
+        tmp["marker"].mask(tmp["marker"] != "", "Phenology", inplace=True)
 
         sns.set_style("dark")
         _, _ = plt.subplots(figsize=(20, 4))
@@ -240,7 +208,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--type",
         type=str,
-        choices=["slope-diff", "three-day"],
+        choices=["slope-diff"],
         default="slope-diff",
         help="Phenology detection method",
     )
