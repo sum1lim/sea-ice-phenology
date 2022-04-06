@@ -95,20 +95,20 @@ def slope_diff_method(dataframe, band):
             left.shape[0] > 2 * subset_length // 3
             and right.shape[0] > 2 * subset_length // 3
         ):
-            reg_1 = (
+            left_reg = (
                 LinearRegression()
                 .fit(np.array([left.index]).reshape(-1, 1), left)
                 .coef_[0]
             )
-            reg_2 = (
+            right_reg = (
                 LinearRegression()
                 .fit(np.array([right.index]).reshape(-1, 1), right)
                 .coef_[0]
             )
-            r1, _ = pearsonr(index_1, left)
-            r2, _ = pearsonr(index_2, right)
+            left_r, _ = pearsonr(index_1, left)
+            right_r, _ = pearsonr(index_2, right)
 
-            anomaly_li.append((reg_1 * r1 - reg_2 * r2))
+            anomaly_li.append((left_reg * left_r - right_reg * right_r))
             median_diff_li.append(np.sign(left.median() - right.median()))
         else:
             anomaly_li.append(0)
