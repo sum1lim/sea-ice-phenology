@@ -39,8 +39,9 @@ def hampel_filter(input_series, window_size, n_sigmas=3):
     return new_series, indices
 
 
-def melt_freeze_season(dataframe, band):
-    dataframe["freeze_melt"] = dataframe[band].copy()
+def melt_freeze_season(dataframe, sequence):
+    freeze_melt = pd.Series(sequence, name="freeze_melt")
+    dataframe = pd.concat([dataframe, freeze_melt], axis=1)
 
     upper_thresh = (
         max(dataframe["freeze_melt"]) - min(dataframe["freeze_melt"])
@@ -61,6 +62,8 @@ def melt_freeze_season(dataframe, band):
         dataframe["freeze_melt"] > upper_thresh, 3, inplace=True
     )
 
+    return dataframe
+
 
 def slope_diff_method(dataframe, band):
     # Hampel Filtering
@@ -74,38 +77,39 @@ def slope_diff_method(dataframe, band):
             frac=5 / len(sequence),
         )
     )
+    sequence.index = dataframe.index
 
     subset_length = 15
     anomaly_li = [0 for _ in range(subset_length)]
     median_diff_li = [0 for _ in range(subset_length)]
     idx = subset_length
     while idx < dataframe.shape[0]:
-        subset_1 = sequence[idx - subset_length : idx].dropna()
-        subset_2 = sequence[idx : idx + subset_length].dropna()
+        left = sequence[idx - subset_length : idx].dropna()
+        right = sequence[idx : idx + subset_length].dropna()
         notna_1 = sequence[idx - subset_length : idx].notna()
         index_1 = notna_1[notna_1].index.astype(np.int64)
         notna_2 = sequence[idx : idx + subset_length].notna()
         index_2 = notna_2[notna_2].index.astype(np.int64)
 
         if (
-            subset_1.shape[0] > 2 * subset_length // 3
-            and subset_2.shape[0] > 2 * subset_length // 3
+            left.shape[0] > 2 * subset_length // 3
+            and right.shape[0] > 2 * subset_length // 3
         ):
             reg_1 = (
                 LinearRegression()
-                .fit(np.array([subset_1.index]).reshape(-1, 1), subset_1)
+                .fit(np.array([left.index]).reshape(-1, 1), left)
                 .coef_[0]
             )
             reg_2 = (
                 LinearRegression()
-                .fit(np.array([subset_2.index]).reshape(-1, 1), subset_2)
+                .fit(np.array([right.index]).reshape(-1, 1), right)
                 .coef_[0]
             )
-            r1, _ = pearsonr(index_1, subset_1)
-            r2, _ = pearsonr(index_2, subset_2)
+            r1, _ = pearsonr(index_1, left)
+            r2, _ = pearsonr(index_2, right)
 
             anomaly_li.append((reg_1 * r1 - reg_2 * r2))
-            median_diff_li.append(np.sign(subset_1.median() - subset_2.median()))
+            median_diff_li.append(np.sign(left.median() - right.median()))
         else:
             anomaly_li.append(0)
             median_diff_li.append(0)
@@ -116,15 +120,15 @@ def slope_diff_method(dataframe, band):
     tmp["anomaly"] = anomaly_li
     tmp["median_diff"] = median_diff_li
 
-    maxima = argrelextrema(tmp["anomaly"].to_numpy(), np.greater, order=30)
-    minima = argrelextrema(tmp["anomaly"].to_numpy(), np.less, order=30)
+    maxima = argrelextrema(tmp["anomaly"].to_numpy(), np.greater, order=20)
+    minima = argrelextrema(tmp["anomaly"].to_numpy(), np.less, order=20)
     tmp["maxima"] = [1 if i in maxima[0] else 0 for i in range(len(tmp))]
     tmp["minima"] = [1 if i in minima[0] else 0 for i in range(len(tmp))]
 
     tmp["anomaly"] = interQuantileMask(tmp["anomaly"], low=-1, middle=0, high=1)
 
     # Divide timeseries into freezing, transition and melt seasons
-    melt_freeze_season(tmp, band)
+    tmp = melt_freeze_season(tmp, sequence)
 
     # Detect dates with high probability of phenology
     tmp["phenology"] = (
