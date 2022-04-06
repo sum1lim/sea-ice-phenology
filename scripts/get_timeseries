@@ -20,12 +20,15 @@ def id_pixel_dict(pixels, bands):
     if type(bands) == str:
         bands = [bands]
 
-    pix_li = pixels.getInfo()
+    ret_dicts = [{} for _ in range(len(bands))]
+    try:
+        pix_li = pixels.getInfo()
+    except ee.ee_exception.EEException:
+        return ret_dicts
     id_idx = pix_li[0].index("id")
     band_idx_li = [pix_li[0].index(band) for band in bands]
     del pix_li[0]
 
-    ret_dicts = [{} for _ in range(len(bands))]
     for pixel in tqdm(pix_li):
         key = pixel[id_idx]
         for i, band_idx in enumerate(band_idx_li):
