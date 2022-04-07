@@ -17,5 +17,6 @@ setup(
         ./scripts/get_timeseries
         ./scripts/interpolate
         ./scripts/phenology
+        ./scripts/trend
     """.split(),
 )
