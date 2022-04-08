@@ -39,28 +39,16 @@ def hampel_filter(input_series, window_size, n_sigmas=3):
     return new_series, indices
 
 
-def melt_freeze_season(dataframe, sequence):
-    freeze_melt = pd.Series(sequence, name="freeze_melt")
-    dataframe = pd.concat([dataframe, freeze_melt], axis=1)
+def melt_freeze_season(dataframe):
+    dataframe["season_idx"] = dataframe["filtered"].copy()
 
-    upper_thresh = (
-        max(dataframe["freeze_melt"]) - min(dataframe["freeze_melt"])
-    ) * 0.7 + min(dataframe["freeze_melt"])
-    lower_thresh = (
-        max(dataframe["freeze_melt"]) - min(dataframe["freeze_melt"])
-    ) * 0.1 + min(dataframe["freeze_melt"])
-    dataframe["freeze_melt"].mask(
-        dataframe["freeze_melt"] < lower_thresh, -3, inplace=True
-    )
-    dataframe["freeze_melt"].mask(
-        (dataframe["freeze_melt"] > lower_thresh)
-        & (dataframe["freeze_melt"] < upper_thresh),
+    dataframe["season_idx"].mask(dataframe["season_idx"] < 0.15, -3, inplace=True)
+    dataframe["season_idx"].mask(
+        (dataframe["season_idx"] > 0.15) & (dataframe["season_idx"] < 0.6),
         0,
         inplace=True,
     )
-    dataframe["freeze_melt"].mask(
-        dataframe["freeze_melt"] > upper_thresh, 3, inplace=True
-    )
+    dataframe["season_idx"].mask(dataframe["season_idx"] > 0.6, 3, inplace=True)
 
     return dataframe
 
@@ -78,6 +66,8 @@ def slope_diff_method(dataframe, band):
         )
     )
     sequence.index = dataframe.index
+    filtered = pd.Series(sequence, name="filtered")
+    dataframe = pd.concat([dataframe, filtered], axis=1)
 
     subset_length = 15
     anomaly_li = [0 for _ in range(subset_length)]
@@ -128,13 +118,13 @@ def slope_diff_method(dataframe, band):
     tmp["anomaly"] = interQuantileMask(tmp["anomaly"], low=-1, middle=0, high=1)
 
     # Divide timeseries into freezing, transition and melt seasons
-    tmp = melt_freeze_season(tmp, sequence)
+    tmp = melt_freeze_season(tmp)
 
     # Detect dates with high probability of phenology
     tmp["phenology"] = (
         tmp["anomaly"] * tmp["maxima"]
         + tmp["anomaly"] * tmp["minima"]
-        + tmp["freeze_melt"]
+        + tmp["season_idx"]
     )
 
     # Define names for phenology
@@ -158,7 +148,7 @@ def slope_diff_method(dataframe, band):
         tmp["phenology"].astype(str).str.isalpha() == False, "", inplace=True
     )
 
-    return tmp["phenology"]
+    return tmp
 
 
 def main(args):
@@ -173,16 +163,17 @@ def main(args):
         tmp = ts_df.copy()
         tmp["Date"] = tmp.index
 
-        tmp["phenology"] = slope_diff_method(tmp, band)
+        tmp = slope_diff_method(tmp, band)
 
         # Maker for plotting
         tmp["marker"] = tmp["phenology"].copy()
         tmp["marker"].mask(tmp["marker"] != "", "Phenology", inplace=True)
 
         sns.set_style("dark")
-        _, _ = plt.subplots(figsize=(20, 4))
+        fig, ax = plt.subplots(figsize=(20, 4))
 
-        sns.scatterplot(
+        p1 = sns.lineplot(data=tmp, x="Date", y="filtered", color="grey", ax=ax)
+        p2 = sns.scatterplot(
             data=tmp,
             x="Date",
             y=band,
@@ -190,6 +181,7 @@ def main(args):
             palette="tab10",
             size="marker",
             sizes=(30, 5),
+            ax=ax,
         )
 
         plt.grid()
