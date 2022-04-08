@@ -183,6 +183,9 @@ def main(args):
             sizes=(30, 5),
             ax=ax,
         )
+        fig.canvas.manager.set_window_title(
+            f"{'.'.join(args.input.split('/')[-1].split('.')[:-1])}_phenology"
+        )
 
         plt.grid()
         plt.show()
