@@ -109,4 +109,3 @@ def median_interpolation(series):
 
 def random_interpolation(series):
     return iterative_interpolation(series, "random")
-
