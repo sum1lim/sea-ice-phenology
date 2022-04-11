@@ -1,10 +1,30 @@
 #!/usr/bin/env python3
 import argparse
 import csv
+import pandas as pd
 
 
 def main(args):
-    None
+    df = pd.read_csv(args.input, thousands=",")
+
+    phenology_dfs = {"MO": None, "PO": None, "PD": None, "OW": None, "FO": None}
+    for phenology in df.columns:
+        if phenology.endswith("phenology") == False:
+            continue
+        for k in phenology_dfs:
+            trend = df.drop(df[df[phenology] != k].index).copy()
+            col_title = f"{phenology.split('_phenology')[0]}_{k}"
+            trend.index = pd.DatetimeIndex(trend["system:time_start"]).year
+            trend[col_title] = pd.to_datetime(
+                trend["system:time_start"], errors="coerce"
+            ).dt.dayofyear
+
+            if phenology_dfs[k] is None:
+                phenology_dfs[k] = pd.DataFrame(trend[col_title])
+            else:
+                phenology_dfs[k] = phenology_dfs[k].join(trend[col_title])
+
+    print(phenology_dfs)
 
 
 if __name__ == "__main__":
