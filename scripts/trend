@@ -12,7 +12,7 @@ def main(args):
     df = pd.read_csv(args.input, thousands=",")
 
     for phenology in df.columns:
-        phenology_df = None
+        trend_df = None
         if phenology.endswith("phenology") == False:
             continue
         for k in ["MO", "PO", "PD", "OW", "FO"]:
@@ -30,20 +30,16 @@ def main(args):
                 trend[trend[k] == ""].index
             )
 
-            if phenology_df is None:
-                phenology_df = pd.DataFrame(trend[k])
+            if trend_df is None:
+                trend_df = pd.DataFrame(trend[k])
             else:
-                phenology_df = phenology_df.join(trend[k])
+                trend_df = trend_df.join(trend[k])
 
         sns.set_style("dark")
         fig, ax = plt.subplots(figsize=(20, 4))
 
-        # for col in phenology_df.columns:
         p = sns.lineplot(
-            data=phenology_df,
-            # x=phenology_df.index,
-            # y=col,
-            # ax=ax,
+            data=trend_df,
         )
         p.set_xlabel("Year")
         p.set_ylabel("DOY")
@@ -54,6 +50,10 @@ def main(args):
 
         plt.grid()
         plt.show()
+
+        trend_df.to_csv(
+            f"{'.'.join(args.input.split('/')[-1].split('.')[:-1])}_{phenology.split('_phenology')[0]}_trend.csv"
+        )
 
 
 if __name__ == "__main__":
