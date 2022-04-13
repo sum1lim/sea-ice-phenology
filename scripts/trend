@@ -3,21 +3,22 @@ import argparse
 import csv
 import pandas as pd
 import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 from sea_ice_phenology.utils import interQuantileMask
 
 
 def main(args):
     df = pd.read_csv(args.input, thousands=",")
 
-    phenology_df = None
     for phenology in df.columns:
+        phenology_df = None
         if phenology.endswith("phenology") == False:
             continue
         for k in ["MO", "PO", "PD", "OW", "FO"]:
             trend = df.drop(df[df[phenology] != k].index).copy()
-            col_title = f"{phenology.split('_phenology')[0]}_{k}"
             trend.index = pd.DatetimeIndex(trend["system:time_start"]).year
-            trend[col_title] = pd.to_datetime(
+            trend[k] = pd.to_datetime(
                 trend["system:time_start"], errors="coerce"
             ).dt.dayofyear
             if k in ["PO", "OW"]:
@@ -25,16 +26,34 @@ def main(args):
             else:
                 trend = trend.groupby(trend.index).last()
 
-            trend[col_title] = interQuantileMask(
-                trend[col_title], low="", high=""
-            ).drop(trend[trend[col_title] == ""].index)
+            trend[k] = interQuantileMask(trend[k], low="", high="").drop(
+                trend[trend[k] == ""].index
+            )
 
             if phenology_df is None:
-                phenology_df = pd.DataFrame(trend[col_title])
+                phenology_df = pd.DataFrame(trend[k])
             else:
-                phenology_df = phenology_df.join(trend[col_title])
+                phenology_df = phenology_df.join(trend[k])
 
-    print(phenology_df)
+        sns.set_style("dark")
+        fig, ax = plt.subplots(figsize=(20, 4))
+
+        # for col in phenology_df.columns:
+        p = sns.lineplot(
+            data=phenology_df,
+            # x=phenology_df.index,
+            # y=col,
+            # ax=ax,
+        )
+        p.set_xlabel("Year")
+        p.set_ylabel("DOY")
+
+        fig.canvas.manager.set_window_title(
+            f"{'.'.join(args.input.split('/')[-1].split('.')[:-1])}_{phenology.split('_phenology')[0]}_trend"
+        )
+
+        plt.grid()
+        plt.show()
 
 
 if __name__ == "__main__":
