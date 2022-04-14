@@ -3,6 +3,7 @@ import ee
 import argparse
 import csv
 from tqdm import tqdm
+from statistics import median
 
 
 def getQABits(number, start, end):
@@ -44,62 +45,66 @@ def id_pixel_dict(pixels, bands):
 def main(args):
     ee.Initialize()
 
-    roi = ee.Geometry.Point(args.coords[0], args.coords[1])
+    center = ee.Geometry.Point(args.coords[0], args.coords[1])
+    buff = ee.Geometry.Point(args.coords[0], args.coords[1]).buffer(250)
+    window = [center] + [
+        ee.Geometry.Point(
+            buff.coordinates().getInfo()[0][i][0], buff.coordinates().getInfo()[0][i][1]
+        )
+        for i in range(2, 24, 3)
+    ]
 
-    modis = (
-        ee.ImageCollection("MODIS/006/MOD09GQ")
-        .filterDate(args.start_date, args.end_date)
-        .select(["sur_refl_b01", "sur_refl_b02"], ["B1", "B2"])
-        .getRegion(roi, 0.1)
-    )
-    modis_qa = (
-        ee.ImageCollection("MODIS/006/MOD09GA")
-        .filterDate(args.start_date, args.end_date)
-        .select("state_1km", "SolarZenith")
-        .getRegion(roi, 0.1)
-    )
     landsat = (
         ee.ImageCollection("LANDSAT/LC08/C02/T1_TOA")
         .filterDate(args.start_date, args.end_date)
-        .select(["B4", "B5", "QA_PIXEL"], ["B1", "B2", "QA"])
-        .getRegion(roi, 0.1)
+        .select(["B4", "QA_PIXEL"], ["B1", "QA"])
+        .getRegion(center, 0.1)
     )
 
-    modis_qa_dict, solar_dict = id_pixel_dict(modis_qa, ["state_1km", "SolarZenith"])
-    modis_B1_dict, modis_B2_dict = id_pixel_dict(modis, ["B1", "B2"])
-    landsat_B1_dict, landsat_B2_dict, landsat_qa_dict = id_pixel_dict(
-        landsat, ["B1", "B2", "QA"]
-    )
+    landsat_B1_dict, landsat_qa_dict = id_pixel_dict(landsat, ["B1", "QA"])
 
     output_dict = {}
     for k, v in landsat_qa_dict.items():
         cloud_qa = getQABits(v, 3, 3)
         if cloud_qa == 0:
-            try:
-                date = k.split("_")[-1]
+            date = k.split("_")[-1]
+            if k in landsat_B1_dict.keys():
                 output_dict[f"{date[0:4]}-{date[4:6]}-{date[6:8]}"] = [
-                    landsat_B1_dict[k],
-                    landsat_B2_dict[k],
+                    landsat_B1_dict[k]
                 ]
-            except KeyError:
-                continue
 
-    for k, v in modis_qa_dict.items():
-        cloud_qa = getQABits(v, 0, 1)
-        if (cloud_qa == 0 or cloud_qa == 3) and solar_dict[k] <= 8600:
-            try:
-                output_dict[k.replace("_", "-")] = [
-                    modis_B1_dict[k] / 10000,
-                    modis_B2_dict[k] / 10000,
-                ]
-            except KeyError:
-                continue
+    for point in window:
+        modis = (
+            ee.ImageCollection("MODIS/006/MOD09GQ")
+            .filterDate(args.start_date, args.end_date)
+            .select(["sur_refl_b01"], ["B1"])
+            .getRegion(point, 0.1)
+        )
+        modis_qa = (
+            ee.ImageCollection("MODIS/006/MOD09GA")
+            .filterDate(args.start_date, args.end_date)
+            .select("state_1km", "SolarZenith")
+            .getRegion(point, 0.1)
+        )
+
+        modis_qa_dict, solar_dict = id_pixel_dict(
+            modis_qa, ["state_1km", "SolarZenith"]
+        )
+        modis_B1_dict = id_pixel_dict(modis, ["B1"])
+
+        for k, v in modis_qa_dict.items():
+            cloud_qa = getQABits(v, 0, 1)
+            if (cloud_qa == 0 or cloud_qa == 3) and solar_dict[k] <= 8600:
+                if k.replace("_", "-") not in output_dict.keys():
+                    output_dict[k.replace("_", "-")] = [modis_B1_dict[k] / 10000]
+                elif k in modis_B1_dict.keys():
+                    output_dict[k.replace("_", "-")] += [modis_B1_dict[k] / 10000]
 
     with open(args.output, "w") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(["system:time_start", "B1", "B2"])
+        writer.writerow(["system:time_start", "B1"])
         for k in sorted(output_dict.keys()):
-            writer.writerow([k, output_dict[k][0], output_dict[k][1]])
+            writer.writerow([k, median(output_dict[k])])
 
 
 if __name__ == "__main__":
