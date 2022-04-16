@@ -2,8 +2,9 @@
 import ee
 import argparse
 import csv
+import math
 from tqdm import tqdm
-from statistics import median
+from statistics import mean
 
 
 def getQABits(number, start, end):
@@ -46,10 +47,15 @@ def main(args):
     ee.Initialize()
 
     center = ee.Geometry.Point(args.coords[0], args.coords[1])
-    buff = ee.Geometry.Point(args.coords[0], args.coords[1]).buffer(250)
+    buff = ee.Geometry.Point(args.coords[0], args.coords[1]).buffer(
+        125 * (1 / math.tan(math.pi / 8))
+    )
     window = [center] + [
         ee.Geometry.Point(
-            buff.coordinates().getInfo()[0][i][0], buff.coordinates().getInfo()[0][i][1]
+            [
+                buff.coordinates().getInfo()[0][i][0],
+                buff.coordinates().getInfo()[0][i][1],
+            ]
         )
         for i in range(2, 24, 3)
     ]
@@ -95,16 +101,17 @@ def main(args):
         for k, v in modis_qa_dict.items():
             cloud_qa = getQABits(v, 0, 1)
             if (cloud_qa == 0 or cloud_qa == 3) and solar_dict[k] <= 8600:
-                if k.replace("_", "-") not in output_dict.keys():
-                    output_dict[k.replace("_", "-")] = [modis_B1_dict[k] / 10000]
-                elif k in modis_B1_dict.keys():
-                    output_dict[k.replace("_", "-")] += [modis_B1_dict[k] / 10000]
+                if k in modis_B1_dict.keys():
+                    if k.replace("_", "-") not in output_dict.keys():
+                        output_dict[k.replace("_", "-")] = [modis_B1_dict[k] / 10000]
+                    else:
+                        output_dict[k.replace("_", "-")] += [modis_B1_dict[k] / 10000]
 
     with open(args.output, "w") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["system:time_start", "B1"])
         for k in sorted(output_dict.keys()):
-            writer.writerow([k, median(output_dict[k])])
+            writer.writerow([k, mean(output_dict[k])])
 
 
 if __name__ == "__main__":
