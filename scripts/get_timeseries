@@ -73,7 +73,7 @@ def get_timeseries(lon, lat):
             if cloud_qa == 0:
                 date = k.split("_")[-1]
                 if k in landsat_B1_dict.keys():
-                    if k.replace("_", "-") in output_dict.keys():
+                    if f"{date[0:4]}-{date[4:6]}-{date[6:8]}" in output_dict.keys():
                         output_dict[f"{date[0:4]}-{date[4:6]}-{date[6:8]}"] += [
                             landsat_B1_dict[k]
                         ]
