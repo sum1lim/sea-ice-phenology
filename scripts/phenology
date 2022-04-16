@@ -176,6 +176,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--input",
+        nargs="+",
         type=str,
         help="Path to time-series data file (csv)",
         required=True,
@@ -189,5 +190,10 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-
-    main(args)
+    if type(args.input) == list:
+        inputs = args.input[:]
+        for ip in inputs:
+            args.input = ip
+            main(args)
+    else:
+        main(args)
