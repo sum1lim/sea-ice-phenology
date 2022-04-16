@@ -47,6 +47,7 @@ def main(args):
 
         sns.set_style("dark")
         fig, ax = plt.subplots(figsize=(20, 4))
+        tmp = tmp.drop(tmp[tmp[band] == ""].index)
         sns.scatterplot(data=tmp, x="Date", y=band, hue="mask", style="mask", s=5)
         fig.canvas.manager.set_window_title(
             f"{'.'.join(args.input.split('/')[-1].split('.')[:-1])}_{args.type}"
