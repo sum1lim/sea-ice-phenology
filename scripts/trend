@@ -38,8 +38,20 @@ def main(args):
         sns.set_style("dark")
         fig, ax = plt.subplots(figsize=(20, 4))
 
-        p = sns.lineplot(
-            data=trend_df,
+        p = sns.regplot(
+            x=np.array(trend_df.index, dtype=float),
+            y=np.array(trend_df["MO"], dtype=float),
+            ax=ax,
+        )
+        p = sns.regplot(
+            x=np.array(trend_df.index, dtype=float),
+            y=np.array(trend_df["OW"], dtype=float),
+            ax=ax,
+        )
+        p = sns.regplot(
+            x=np.array(trend_df.index, dtype=float),
+            y=np.array(trend_df["FO"], dtype=float),
+            ax=ax,
         )
         p.set_xlabel("Year")
         p.set_ylabel("DOY")
