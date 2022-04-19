@@ -63,8 +63,10 @@ def main(args):
         plt.grid()
         plt.show()
 
+        trend_df["Year"] = trend_df.index
         trend_df.to_csv(
-            f"{'.'.join(args.input.split('.')[:-1]).split('_phenology')[0]}_{phenology.split('_phenology')[0]}_trend.csv"
+            f"{'.'.join(args.input.split('.')[:-1]).split('_phenology')[0]}_trend.csv",
+            index=False,
         )
 
 
