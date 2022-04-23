@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import os
 from difflib import context_diff
 import pandas as pd
 import numpy as np
@@ -128,10 +129,14 @@ def slope_diff_method(dataframe, band):
 
 
 def main(args):
+    if not os.path.isfile(args.input):
+        return
+
     ts_df = pd.read_csv(args.input, thousands=",")
     ts_df["system:time_start"] = pd.to_datetime(ts_df["system:time_start"])
     ts_df = ts_df.groupby("system:time_start").mean()
 
+    filename = f"{args.input.split('/')[-1].split('_interpolate')[0]}_phenology"
     for band in ts_df.columns:
         if band.endswith("interpolate") == False:
             continue
@@ -159,16 +164,14 @@ def main(args):
             sizes=(30, 5),
             ax=ax,
         )
-        fig.canvas.manager.set_window_title(
-            f"{'.'.join(args.input.split('/')[-1].split('.')[:-1])}_phenology"
-        )
+        fig.canvas.manager.set_window_title(filename)
 
         plt.grid()
         plt.show()
 
         ts_df[f"{band.split('_interpolate')[0]}_phenology"] = tmp["phenology"]
 
-    ts_df.to_csv(f"{'.'.join(args.input.split('.')[:-1])}_phenology.csv")
+    ts_df.to_csv(f"{args.output}/{filename}.csv")
 
 
 if __name__ == "__main__":
@@ -187,6 +190,12 @@ if __name__ == "__main__":
         choices=["slope-diff"],
         default="slope-diff",
         help="Phenology detection method",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        help="Output dir path",
+        required=True,
     )
 
     args = parser.parse_args()
