@@ -152,6 +152,8 @@ def interpolate():
                     input_file,
                     "--type",
                     variable,
+                    "--output",
+                    "/".join(input_file.split("/")[:-1]),
                 ]: run_and_forget(cmd_line, button_run),
             )
             button_run.pack(side="bottom")
@@ -222,6 +224,8 @@ def phenology():
                     input_file,
                     "--type",
                     variable,
+                    "--output",
+                    "/".join(input_file.split("/")[:-1]),
                 ]: run_and_forget(cmd_line, button_run),
             )
             button_run.pack(side="bottom")
@@ -251,6 +255,61 @@ def phenology():
     phenology_window = Tk()
 
     FE_frame = Frame(phenology_window)
+
+    label_file_explorer = Label(FE_frame, text="File Opened: ", fg="blue")
+
+    button_explore = Button(
+        FE_frame,
+        text="Input File",
+        command=lambda label=label_file_explorer: select_input(label),
+    )
+    FE_frame.pack(side="top")
+    button_explore.pack(side="left")
+    label_file_explorer.pack(side="left")
+
+
+def trend():
+    """
+    Window for sea ice trend detection
+    """
+
+    def select_input(label):
+        def run_and_forget(cmd_line, button_run):
+            try:
+                subprocess.run(cmd_line)
+            except Exception as e:
+                button_run.forget()
+                raise (e)
+
+        def RUN(input_file, button_run):
+            button_run.pack_forget()
+
+            button_run.config(
+                command=lambda cmd_line=wrapper_command + [
+                    f"{prefix}trend",
+                    "--input",
+                    input_file,
+                    "--output",
+                    "/".join(input_file.split("/")[:-1]),
+                ]: run_and_forget(cmd_line, button_run),
+            )
+            button_run.pack(side="bottom")
+
+        input_file = filedialog.askopenfilename(
+            initialdir="./",
+            title="Select a File",
+            filetypes=(("CSV files", "*.csv*"), ("all files", "*.*")),
+        )
+        label.configure(text=f"File Opened: {input_file}")
+
+        if input_file != ():
+            button_run = Button(trend_window, text="RUN")
+
+            RUN(input_file, button_run)
+
+    trend_window = Tk()
+
+    FE_frame = Frame(trend_window)
 
     label_file_explorer = Label(FE_frame, text="File Opened: ", fg="blue")
 
@@ -306,6 +365,13 @@ def main():
         command=phenology,
     )
     button_phenology.pack(side="top")
+
+    button_trend = Button(
+        main_window,
+        text="Phenological Trend",
+        command=trend,
+    )
+    button_trend.pack(side="top")
 
     button_exit = Button(main_window, text="Exit", command=exit)
     button_exit.pack(side="bottom")
