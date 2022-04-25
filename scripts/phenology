@@ -64,12 +64,24 @@ def slope_diff_method(dataframe, band):
         ):
             left_reg = (
                 LinearRegression()
-                .fit(np.array([left.index]).reshape(-1, 1), left)
+                .fit(
+                    np.array([left.index])
+                    .astype("datetime64")
+                    .astype(int)
+                    .reshape(-1, 1),
+                    left,
+                )
                 .coef_[0]
             )
             right_reg = (
                 LinearRegression()
-                .fit(np.array([right.index]).reshape(-1, 1), right)
+                .fit(
+                    np.array([right.index])
+                    .astype("datetime64")
+                    .astype(int)
+                    .reshape(-1, 1),
+                    right,
+                )
                 .coef_[0]
             )
             left_r, _ = pearsonr(index_1, left)
@@ -92,7 +104,9 @@ def slope_diff_method(dataframe, band):
     tmp["maxima"] = [1 if i in maxima[0] else 0 for i in range(len(tmp))]
     tmp["minima"] = [1 if i in minima[0] else 0 for i in range(len(tmp))]
 
-    tmp["anomaly"] = interQuantileMask(tmp["anomaly"], low=-1, middle=0, high=1)
+    tmp["anomaly"] = interQuantileMask(
+        tmp["anomaly"], low=-1, middle=0, high=1, multiple=1.5
+    )
 
     # Divide timeseries into freezing, transition and melt seasons
     tmp = melt_freeze_season(tmp)

@@ -37,7 +37,7 @@ def main(args):
             if trend_df is None:
                 trend_df = pd.DataFrame(trend[k])
             else:
-                trend_df = trend_df.join(trend[k])
+                trend_df = trend_df.join(trend[k], how="outer")
 
         sns.set_style("dark")
         fig, ax = plt.subplots(figsize=(20, 4))
