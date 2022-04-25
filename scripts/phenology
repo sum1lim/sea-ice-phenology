@@ -19,13 +19,13 @@ lowess = sm.nonparametric.lowess
 def melt_freeze_season(dataframe):
     dataframe["season_idx"] = dataframe["filtered"].copy()
 
-    dataframe["season_idx"].mask(dataframe["season_idx"] < 0.15, -3, inplace=True)
+    dataframe["season_idx"].mask(dataframe["season_idx"] <= 0.15, -3, inplace=True)
     dataframe["season_idx"].mask(
-        (dataframe["season_idx"] > 0.15) & (dataframe["season_idx"] < 0.6),
+        (dataframe["season_idx"] > 0.15) & (dataframe["season_idx"] < 0.7),
         0,
         inplace=True,
     )
-    dataframe["season_idx"].mask(dataframe["season_idx"] > 0.6, 3, inplace=True)
+    dataframe["season_idx"].mask(dataframe["season_idx"] >= 0.7, 3, inplace=True)
 
     return dataframe
 
@@ -46,17 +46,15 @@ def slope_diff_method(dataframe, band):
     filtered = pd.Series(sequence, name="filtered")
     dataframe = pd.concat([dataframe, filtered], axis=1)
 
-    subset_length = 15
+    subset_length = 30
     anomaly_li = [0 for _ in range(subset_length)]
     median_diff_li = [0 for _ in range(subset_length)]
     idx = subset_length
     while idx < dataframe.shape[0]:
         left = sequence[idx - subset_length : idx].dropna()
+        left.index = (left.index - sequence.index[idx]).days
         right = sequence[idx : idx + subset_length].dropna()
-        notna_1 = sequence[idx - subset_length : idx].notna()
-        index_1 = notna_1[notna_1].index.astype(np.int64)
-        notna_2 = sequence[idx : idx + subset_length].notna()
-        index_2 = notna_2[notna_2].index.astype(np.int64)
+        right.index = (right.index - sequence.index[idx]).days
 
         if (
             left.shape[0] > 2 * subset_length // 3
@@ -64,28 +62,16 @@ def slope_diff_method(dataframe, band):
         ):
             left_reg = (
                 LinearRegression()
-                .fit(
-                    np.array([left.index])
-                    .astype("datetime64")
-                    .astype(int)
-                    .reshape(-1, 1),
-                    left,
-                )
+                .fit(np.array([left.index]).reshape(-1, 1), left)
                 .coef_[0]
             )
             right_reg = (
                 LinearRegression()
-                .fit(
-                    np.array([right.index])
-                    .astype("datetime64")
-                    .astype(int)
-                    .reshape(-1, 1),
-                    right,
-                )
+                .fit(np.array([right.index]).reshape(-1, 1), right)
                 .coef_[0]
             )
-            left_r, _ = pearsonr(index_1, left)
-            right_r, _ = pearsonr(index_2, right)
+            left_r, _ = pearsonr(left.index, left)
+            right_r, _ = pearsonr(right.index, right)
 
             anomaly_li.append((left_reg * left_r - right_reg * right_r))
             median_diff_li.append(np.sign(left.median() - right.median()))
@@ -99,14 +85,13 @@ def slope_diff_method(dataframe, band):
     tmp["anomaly"] = anomaly_li
     tmp["median_diff"] = median_diff_li
 
-    maxima = argrelextrema(tmp["anomaly"].to_numpy(), np.greater, order=20)
-    minima = argrelextrema(tmp["anomaly"].to_numpy(), np.less, order=20)
+    maxima = argrelextrema(tmp["anomaly"].to_numpy(), np.greater, order=30)
+    minima = argrelextrema(tmp["anomaly"].to_numpy(), np.less, order=30)
     tmp["maxima"] = [1 if i in maxima[0] else 0 for i in range(len(tmp))]
     tmp["minima"] = [1 if i in minima[0] else 0 for i in range(len(tmp))]
 
-    tmp["anomaly"] = interQuantileMask(
-        tmp["anomaly"], low=-1, middle=0, high=1, multiple=1.5
-    )
+    tmp["anomaly"].mask(tmp["anomaly"] < -0.01, -1, inplace=True)
+    tmp["anomaly"].mask(tmp["anomaly"] > 0.01, 1, inplace=True)
 
     # Divide timeseries into freezing, transition and melt seasons
     tmp = melt_freeze_season(tmp)
@@ -167,7 +152,7 @@ def main(args):
         sns.set_style("dark")
         fig, ax = plt.subplots(figsize=(20, 4))
 
-        p1 = sns.lineplot(data=tmp, x="Date", y="filtered", color="grey", ax=ax)
+        p1 = sns.lineplot(data=tmp, x="Date", y="filtered", color="grey", ax=ax, size=0.5)
         p2 = sns.scatterplot(
             data=tmp,
             x="Date",
@@ -185,6 +170,7 @@ def main(args):
 
         ts_df[f"{band.split('_interpolate')[0]}_phenology"] = tmp["phenology"]
 
+    print(f"Saving to {args.output}/{filename}.csv")
     ts_df.to_csv(f"{args.output}/{filename}.csv")
 
 
