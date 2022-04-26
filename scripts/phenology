@@ -16,20 +16,6 @@ pd.options.mode.chained_assignment = None
 lowess = sm.nonparametric.lowess
 
 
-def melt_freeze_season(dataframe):
-    dataframe["season_idx"] = dataframe["filtered"].copy()
-
-    dataframe["season_idx"].mask(dataframe["season_idx"] <= 0.15, -3, inplace=True)
-    dataframe["season_idx"].mask(
-        (dataframe["season_idx"] > 0.15) & (dataframe["season_idx"] < 0.7),
-        0,
-        inplace=True,
-    )
-    dataframe["season_idx"].mask(dataframe["season_idx"] >= 0.7, 3, inplace=True)
-
-    return dataframe
-
-
 def slope_diff_method(dataframe, band):
     # Hampel Filtering
     sequence, _ = hampel_filter(dataframe[band], 9, n_sigmas=1)
@@ -85,39 +71,55 @@ def slope_diff_method(dataframe, band):
     tmp["anomaly"] = anomaly_li
     tmp["median_diff"] = median_diff_li
 
-    maxima = argrelextrema(tmp["anomaly"].to_numpy(), np.greater, order=30)
-    minima = argrelextrema(tmp["anomaly"].to_numpy(), np.less, order=30)
+    maxima = argrelextrema(tmp["anomaly"].to_numpy(), np.greater, order=5)
+    minima = argrelextrema(tmp["anomaly"].to_numpy(), np.less, order=5)
     tmp["maxima"] = [1 if i in maxima[0] else 0 for i in range(len(tmp))]
     tmp["minima"] = [1 if i in minima[0] else 0 for i in range(len(tmp))]
 
-    tmp["anomaly"].mask(tmp["anomaly"] < -0.01, -1, inplace=True)
-    tmp["anomaly"].mask(tmp["anomaly"] > 0.01, 1, inplace=True)
-
-    # Divide timeseries into freezing, transition and melt seasons
-    tmp = melt_freeze_season(tmp)
-
-    # Detect dates with high probability of phenology
-    tmp["phenology"] = (
-        tmp["anomaly"] * tmp["maxima"]
-        + tmp["anomaly"] * tmp["minima"]
-        + tmp["season_idx"]
-    )
+    tmp["phenology"] = ["" for _ in range(len(tmp))]
 
     # Define names for phenology
     tmp["phenology"].mask(
-        (tmp["phenology"] == 2) & (tmp["median_diff"] > 0), "MO", inplace=True
+        (tmp["minima"] == 1)
+        & (tmp["anomaly"] < -0.005)
+        & (dataframe["filtered"] >= 0.8)
+        & (tmp["median_diff"] > 0),
+        "MO",
+        inplace=True,
     )
     tmp["phenology"].mask(
-        (tmp["phenology"] == 1) & (tmp["median_diff"] > 0), "PO", inplace=True
+        (tmp["maxima"] == 1)
+        & (tmp["anomaly"] > 0.01)
+        & (dataframe["filtered"] > 0.1)
+        & (dataframe["filtered"] < 0.5)
+        & (tmp["median_diff"] > 0),
+        "PO",
+        inplace=True,
     )
     tmp["phenology"].mask(
-        (tmp["phenology"] == -1) & (tmp["median_diff"] > 0), "PD", inplace=True
+        (tmp["minima"] == 1)
+        & (tmp["anomaly"] < -0.005)
+        & (dataframe["filtered"] > 0.2)
+        & (dataframe["filtered"] < 0.6)
+        & (tmp["median_diff"] > 0),
+        "PD",
+        inplace=True,
     )
     tmp["phenology"].mask(
-        (tmp["phenology"] == -2) & (tmp["median_diff"] > 0), "OW", inplace=True
+        (tmp["maxima"] == 1)
+        & (tmp["anomaly"] > 0.01)
+        & (dataframe["filtered"] <= 0.1)
+        & (tmp["median_diff"] > 0),
+        "OW",
+        inplace=True,
     )
     tmp["phenology"].mask(
-        (tmp["phenology"] == -4) & (tmp["median_diff"] < 0), "FO", inplace=True
+        (tmp["minima"] == 1)
+        & (tmp["anomaly"] < -0.01)
+        & (dataframe["filtered"] <= 0.2)
+        & (tmp["median_diff"] < 0),
+        "FO",
+        inplace=True,
     )
 
     tmp["phenology"].mask(
@@ -152,7 +154,9 @@ def main(args):
         sns.set_style("dark")
         fig, ax = plt.subplots(figsize=(20, 4))
 
-        p1 = sns.lineplot(data=tmp, x="Date", y="filtered", color="grey", ax=ax, size=0.5)
+        p1 = sns.lineplot(
+            data=tmp, x="Date", y="filtered", color="grey", ax=ax, size=0.5
+        )
         p2 = sns.scatterplot(
             data=tmp,
             x="Date",
