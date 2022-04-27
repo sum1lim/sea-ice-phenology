@@ -137,6 +137,7 @@ Output: CSV file(s) and graph visualization
 | 2017-02-12        | 0.8367444444444444 | 0.8367444444444444 |
 | 2017-02-13        |                    | 0.7944333333333333 |
 | 2017-02-14        |                    | 0.8060799999999999 |
+
 ![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Cambridge_Bay_interpolate.png)
 
 #### Phenology Detection
@@ -188,6 +189,7 @@ Output: CSV file(s) and graph visualization
 | 2017-07-19        | 0.0041111111111111 | 0.0041111111111111 | OW           |
 | ...               | ...                | ...                | ...          |
 | 2017-10-16        | 0.2260666666666666 | 0.2260666666666666 | FO           |
+
 ![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Cambridge_Bay_phenology.png)
 
 #### Phenological Trend
@@ -224,4 +226,5 @@ Output: CSV file(s) and graph visualization
 | 144 |     | 290.0 | 2019 |
 | 151 | 221 |       | 2020 |
 | 151 | 219 |       | 2021 |
+
 ![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Cambridge_Bay_trend.png)
