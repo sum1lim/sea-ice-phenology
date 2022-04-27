@@ -219,12 +219,12 @@ $ trend --input ./example/Cambridge_Bay_interpolate.csv ./example/Alert_interpol
 $ trend --input ./example/* --output ./example
 ```
 Output: CSV file(s) and graph visualization
-| MO  | OW  | FO    | Year |
-|-----|-----|-------|------|
-|     |     | 289.0 | 2017 |
-| 148 | 216 | 287.0 | 2018 |
-| 144 |     | 290.0 | 2019 |
-| 151 | 221 |       | 2020 |
-| 151 | 219 |       | 2021 |
+| Year | MO  | OW  | FO    |
+|------|-----|-----|-------|
+| 2017 |     |     | 289.0 |
+| 2018 | 148 | 216 | 287.0 |
+| 2019 | 144 |     | 290.0 |
+| 2020 | 151 | 221 |       |
+| 2021 | 151 | 219 |       |
 
 ![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Cambridge_Bay_trend.png)
