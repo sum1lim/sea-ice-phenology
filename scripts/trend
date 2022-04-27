@@ -67,6 +67,7 @@ def main(args):
         plt.show()
 
         trend_df["Year"] = trend_df.index
+        trend_df = trend_df[["Year", "MO", "OW", "FO"]]
         trend_df.to_csv(
             f"{args.output}/{filename}.csv",
             index=False,
