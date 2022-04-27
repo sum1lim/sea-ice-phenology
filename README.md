@@ -42,6 +42,8 @@ Double-click on `gui.bat`
 ```
 gui
 ```
+![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Screenshot.png)
+
 ## Command-line User Interface (CLI)
 #### Authenticating Google Earth Engine Credentials
 ```
