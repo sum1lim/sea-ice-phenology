@@ -1,8 +1,17 @@
 # sea-ice-phenology
-Sea Ice Phenology Detection Developed by the ICE Remote Sensing Lab at University of Victoria (UVic)
+Sea Ice Phenology Detection Developed by the ICE Remote Sensing Lab at University of Victoria (UVic).
 
 **Author**: [Sangwon Lim](https://github.com/sum1lim)
 
+Sea ice phenological indicators define starting and ending periods of seasonal ice formation and melt cycle:
+
+- Melt Onset (MO): Starting date of the melt season
+- Pond Onset (PO): Starting date of the pond formation
+- Pond Drainage (PD): Starting date of the pond drainage
+- Open Water (OW): Ending date of the melt season
+- Freeze Onset (FO): Starting date of the ice formation
+
+The package offers multiple processes to retrieve such information from [MODIS](https://lpdaac.usgs.gov/products/mod09gqv006/) and [Landsat](https://www.usgs.gov/landsat-missions/landsat-8-data-users-handbook) satellite optical data.
 ## Getting Started
 ### Downloading the Repository
 Download this repository using the green `Code` button at the top right 
@@ -36,20 +45,22 @@ $ pip install .
 ```
 
 ## Graphical User Interface (GUI)
-#### Windows
+### Windows
 Double-click on `gui.bat`
-#### Linux & OSX
+### Linux & OSX
 ```
 gui
 ```
 ![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Screenshot.png)
 
 ## Command-line User Interface (CLI)
-#### Authenticating Google Earth Engine Credentials
+### Authenticating Google Earth Engine Credentials
+Authentication is required prior to retrieving remote sensing data from Google Earth Engine Data Catalogue. Start the process by running the following command in a CLI:
 ```
 $ authenticate
 ```
-#### Get Time Series
+### Get Time Series
+Retrieve optical reflectance time series data at a user-defined location from `MOD09GQ.006 Terra Surface Reflectance Daily Global 250m` and `USGS Landsat 8 Collection 2 Tier 1 TOA Reflectance` products. Wavelengths of 0.64-0.67µm and 0.64-0.67µm are selected, respectively. Reflectance mean of 9 points, center point surrounded by points in 8 directions (N, NE, E, SE, S, SW, W and NW) distanced at 125/$\tan$($\pi$/8) meters, are calculated for each date. Invalid pixels with cloud coverage, low solar angle and land contamination are not selected.
 ```
 $ get_timeseries --help
 usage: get_timeseries [-h] [--coords COORDS COORDS]
@@ -98,7 +109,8 @@ Output: CSV file(s)
 | 2017-02-20        | 0.5673111111111111 |
 | 2017-02-22        | 0.6707             |
 
-#### Time-Series Interpolation
+### Time-Series Interpolation
+Data retrieved in the previous step may include voids in the time series, which can be problematic for further processes. Multiple interpolation methods are provided to fill in the gaps.
 ```
 $ interpolate --help
 usage: interpolate [-h] --input INPUT [INPUT ...]
@@ -142,7 +154,8 @@ Output: CSV file(s) and graph visualization
 
 ![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Cambridge_Bay_interpolate.png)
 
-#### Phenology Detection
+### Phenology Detection
+Detects sea ice phenological indicators of MO, PO, PD, OW and FO. 1D-smoothing, Hampel and Lowess filtering on the time series data, is performed before the detection to enhance the performance.
 ```
 $ phenology --help
 usage: phenology [-h] --input INPUT [INPUT ...] [--type {slope-diff}]
@@ -194,7 +207,8 @@ Output: CSV file(s) and graph visualization
 
 ![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Cambridge_Bay_phenology.png)
 
-#### Phenological Trend
+### Phenological Trend
+Calculates linear trends of annual phenological indicators detected.
 ```
 $ trend --help
 usage: trend [-h] --input INPUT [INPUT ...] --output OUTPUT
