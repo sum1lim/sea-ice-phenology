@@ -52,7 +52,9 @@ gui
 ```
 ![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Screenshot.png)
 
-## Command-line User Interface (CLI)
+## Command-line User Interface (CLI*)
+#### *CLI is not recommended for Windows
+
 ### Authenticating Google Earth Engine Credentials
 Authentication is required prior to retrieving remote sensing data from Google Earth Engine Data Catalogue. Start the process by running the following command in a CLI:
 ```
