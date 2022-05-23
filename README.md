@@ -22,7 +22,7 @@ $ git clone https://github.com/sum1lim/sea-ice-phenology.git
 
 ### Install the Package in a Python Virtual Environment
 #### Prerequisite
-[gcloud CLI](https://cloud.google.com/sdk/docs/install)
+- [gcloud CLI](https://cloud.google.com/sdk/docs/install)
 
 #### Windows
 Double-click on `install` batch script
