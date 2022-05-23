@@ -25,7 +25,8 @@ $ git clone https://github.com/sum1lim/sea-ice-phenology.git
 - [gcloud CLI](https://cloud.google.com/sdk/docs/install)
 
 #### Windows
-Double-click on `install` batch script
+Double-click on `install` batch script to install
+Double-click on `uninstall` batch script to uninstall
 
 #### Apple Silicon (M1)
 Navigate to the parent directory in terminal, `sea-ice-phenology`, in the command line interface and run the following commands.
@@ -41,6 +42,10 @@ $ python -m venv venv
 $ source venv/bin/activate
 $ pip install -r requirements.txt
 $ pip install .
+```
+Remove `venv` to uninstall
+```
+$ rm -r venv
 ```
 
 ## Graphical User Interface (GUI)
