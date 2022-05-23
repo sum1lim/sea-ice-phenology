@@ -58,7 +58,7 @@ $ rm -r venv
 Double-click on `gui` batch script
 ### Linux & OSX
 ```
-gui
+$ gui
 ```
 ![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Screenshot.png)
 
