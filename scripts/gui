@@ -26,22 +26,7 @@ def authenticate(window):
         entry.pack_forget()
         button_ok.pack_forget()
 
-    pipe = subprocess.Popen(
-        wrapper_command + [f"{prefix}authenticate"],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-    )
-
-    entry = Entry(window, width=40)
-    entry.insert(END, "Type in your token")
-    entry.pack()
-    button_ok = Button(
-        window,
-        text="Okay",
-        width=20,
-        command=lambda entry=entry, pipe=pipe: enter(entry, pipe),
-    )
-    button_ok.pack(pady=20)
+    pipe = subprocess.run(wrapper_command + [f"{prefix}authenticate"])
 
 
 def MODIS_data():
@@ -111,7 +96,7 @@ def MODIS_data():
         button_ok.pack(pady=20, side="bottom")
 
     MODIS_data_window = Tk()
-    url = "https://sangwon.users.earthengine.app/view/seaicephenology"
+    url = "https://sangwon.users.earthengine.app/view/sea-ice-phenology-explorer"
 
     button_MODIS = Button(
         MODIS_data_window,
