@@ -34,6 +34,10 @@ Navigate to the parent directory in terminal, `sea-ice-phenology`, in the comman
 $ sh M1_install.sh
 $ source ~/miniforge3/bin/activate
 ```
+Remove `sip-venv` to uninstall
+```
+$ conda remove -n sip-venv --all
+```
 
 #### Linux & OSX (Intel)
 Navigate to the parent directory in terminal, `sea-ice-phenology`, in the command line interface and run the following commands.
