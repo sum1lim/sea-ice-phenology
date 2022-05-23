@@ -21,22 +21,21 @@ $ git clone https://github.com/sum1lim/sea-ice-phenology.git
 ```
 
 ### Install the Package in a Python Virtual Environment
+#### Prerequisite
+- [gcloud CLI](https://cloud.google.com/sdk/docs/install)
 
-Navigate to the parent directory, `sea-ice-phenology`, in the command line interface and run the following commands.
-
-#### Windows Powershell
-```
-$ pip install -r requirements.txt
-$ pip install .
-```
+#### Windows
+Double-click on `install` batch script
 
 #### Apple Silicon (M1)
+Navigate to the parent directory in terminal, `sea-ice-phenology`, in the command line interface and run the following commands.
 ```
 $ sh M1_install.sh
 $ source ~/miniforge3/bin/activate
 ```
 
-#### Linux & OSX Terminal
+#### Linux & OSX (Intel)
+Navigate to the parent directory in terminal, `sea-ice-phenology`, in the command line interface and run the following commands.
 ```
 $ python -m venv venv
 $ source venv/bin/activate
@@ -46,14 +45,16 @@ $ pip install .
 
 ## Graphical User Interface (GUI)
 ### Windows
-Double-click on `gui.bat`
+Double-click on `gui` batch script
 ### Linux & OSX
 ```
 gui
 ```
 ![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Screenshot.png)
 
-## Command-line User Interface (CLI)
+## Command-line User Interface (CLI*)
+#### *CLI is not recommended for Windows
+
 ### Authenticating Google Earth Engine Credentials
 Authentication is required prior to retrieving remote sensing data from Google Earth Engine Data Catalogue. Start the process by running the following command in a CLI:
 ```
