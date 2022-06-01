@@ -2,7 +2,6 @@
 import platform
 import os
 import webbrowser
-import ee
 import subprocess
 from tkinter import filedialog
 from tkinter import *
