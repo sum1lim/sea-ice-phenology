@@ -25,13 +25,19 @@ $ git clone https://github.com/sum1lim/sea-ice-phenology.git
 - [gcloud CLI](https://cloud.google.com/sdk/docs/install)
 
 #### Windows
-Double-click on `install` batch script
+Double-click on `install` batch script to install.
+
+Double-click on `uninstall` batch script to uninstall.
 
 #### Apple Silicon (M1)
 Navigate to the parent directory in terminal, `sea-ice-phenology`, in the command line interface and run the following commands.
 ```
 $ sh M1_install.sh
 $ source ~/miniforge3/bin/activate
+```
+Remove `sip-venv` to uninstall
+```
+$ conda remove -n sip-venv --all
 ```
 
 #### Linux & OSX (Intel)
@@ -42,13 +48,17 @@ $ source venv/bin/activate
 $ pip install -r requirements.txt
 $ pip install .
 ```
+Remove `venv` to uninstall
+```
+$ rm -r venv
+```
 
 ## Graphical User Interface (GUI)
 ### Windows
 Double-click on `gui` batch script
 ### Linux & OSX
 ```
-gui
+$ gui
 ```
 ![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Screenshot.png)
 
