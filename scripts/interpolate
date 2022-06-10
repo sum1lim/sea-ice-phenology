@@ -13,7 +13,7 @@ from sea_ice_phenology.interpolation import (
 
 
 def main(args):
-    if not os.path.isfile(args.input):
+    if not os.path.isfile(args.input) or not args.input.endswith(".csv"):
         return
 
     ts_df = pd.read_csv(args.input, thousands=",")
@@ -57,7 +57,10 @@ def main(args):
         fig.canvas.manager.set_window_title(filename)
 
         plt.grid()
-        plt.show()
+        if args.save_fig:
+            plt.savefig(f"{args.output}/{filename}.png")
+        else:
+            plt.show()
 
         ts_df[f"{band}_interpolate"] = tmp[band]
 
@@ -86,6 +89,11 @@ if __name__ == "__main__":
         type=str,
         help="Output dir path",
         required=True,
+    )
+    parser.add_argument(
+        "--save-fig",
+        action="store_true",
+        help="Save figures instead of prompting",
     )
 
     args = parser.parse_args()
