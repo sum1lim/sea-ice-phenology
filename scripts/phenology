@@ -79,10 +79,18 @@ def slope_diff_method(dataframe, band):
 
     # Define names for phenology
     tmp["phenology"].mask(
-        (tmp["minima"] == 1)
-        & (tmp["anomaly"] < -0.005)
-        & (dataframe["filtered"] >= 0.8)
-        & (tmp["median_diff"] > 0),
+        (
+            tmp["minima"] == 1
+        )  # Checks if the date of interest is a local maximum/minimum of anomaly metric value
+        & (
+            tmp["anomaly"] < -0.005
+        )  # Checks if the anomaly metric value is greater/less than the threshold value
+        & (
+            dataframe["filtered"] >= 0.8
+        )  # Checks if interpolated/smoothen reflectance value is greater/less than the threshold value
+        & (
+            tmp["median_diff"] > 0
+        ),  # Checks if median of 30 days prior is greater/less than the median of 30 days later
         "MO",
         inplace=True,
     )
