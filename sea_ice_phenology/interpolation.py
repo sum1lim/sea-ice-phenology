@@ -10,7 +10,7 @@ def gaussian_weights(size, sigma):
     ret_li = []
     for i in range(size + 1):
         weight = (1 / (sqrt(2 * pi) * (i + 1))) * (
-            e ** -((i ** 2) / (2 * (i + 1) ** 2))
+            e ** -((i**2) / (2 * (i + 1) ** 2))
         )
         if i == 0:
             ret_li.append(weight)

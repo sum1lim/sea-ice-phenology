@@ -17,7 +17,7 @@ lowess = sm.nonparametric.lowess
 
 def slope_diff_method(dataframe, band):
     # Hampel Filtering
-    sequence, _ = hampel_filter(dataframe[band], 9, n_sigmas=1)
+    sequence, _ = hampel_filter(dataframe[band], 10, n_sigmas=1)
     # Lowess Filtering
     sequence = pd.Series(
         lowess(

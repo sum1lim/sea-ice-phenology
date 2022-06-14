@@ -47,10 +47,10 @@ def hampel_filter(input_series, window_size, n_sigmas=3):
     indices = []
 
     # possibly use np.nanmedian
-    for i in range((window_size), (n - window_size)):
-        x0 = np.median(input_series[(i - window_size) : (i + window_size)])
+    for i in range((window_size), (n - window_size - 1)):
+        x0 = np.median(input_series[(i - window_size) : (i + window_size + 1)])
         S0 = k * np.median(
-            np.abs(input_series[(i - window_size) : (i + window_size)] - x0)
+            np.abs(input_series[(i - window_size) : (i + window_size + 1)] - x0)
         )
         if np.abs(input_series[i] - x0) > n_sigmas * S0:
             new_series[i] = x0
