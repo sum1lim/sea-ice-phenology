@@ -24,7 +24,7 @@ def slope_diff_method(dataframe, band):
             exog=sequence.index.astype(int),
             endog=sequence,
             return_sorted=False,
-            frac=5 / len(sequence),
+            frac=20 / len(sequence),
         )
     )
     sequence.index = dataframe.index
@@ -38,7 +38,7 @@ def slope_diff_method(dataframe, band):
     while idx < dataframe.shape[0]:
         left = sequence[idx - subset_length : idx].dropna()
         left.index = (left.index - sequence.index[idx]).days
-        right = sequence[idx : idx + subset_length].dropna()
+        right = sequence[idx + 1 : idx + subset_length + 1].dropna()
         right.index = (right.index - sequence.index[idx]).days
 
         if (
@@ -59,7 +59,7 @@ def slope_diff_method(dataframe, band):
             right_r, _ = pearsonr(right.index, right)
 
             anomaly_li.append((left_reg * left_r - right_reg * right_r))
-            median_diff_li.append(np.sign(left.median() - right.median()))
+            median_diff_li.append(left.median() - right.median())
         else:
             anomaly_li.append(0)
             median_diff_li.append(0)
@@ -70,8 +70,8 @@ def slope_diff_method(dataframe, band):
     tmp["anomaly"] = anomaly_li
     tmp["median_diff"] = median_diff_li
 
-    maxima = argrelextrema(tmp["anomaly"].to_numpy(), np.greater, order=5)
-    minima = argrelextrema(tmp["anomaly"].to_numpy(), np.less, order=5)
+    maxima = argrelextrema(tmp["anomaly"].to_numpy(), np.greater)
+    minima = argrelextrema(tmp["anomaly"].to_numpy(), np.less)
     tmp["maxima"] = [1 if i in maxima[0] else 0 for i in range(len(tmp))]
     tmp["minima"] = [1 if i in minima[0] else 0 for i in range(len(tmp))]
 
@@ -83,13 +83,13 @@ def slope_diff_method(dataframe, band):
             tmp["minima"] == 1
         )  # Checks if the date of interest is a local maximum/minimum of anomaly metric value
         & (
-            tmp["anomaly"] < -0.005
+            tmp["anomaly"] < 0
         )  # Checks if the anomaly metric value is greater/less than the threshold value
         & (
-            dataframe["filtered"] >= 0.8
+            dataframe["filtered"] >= 0.75
         )  # Checks if interpolated/smoothen reflectance value is greater/less than the threshold value
         & (
-            tmp["median_diff"] > 0
+            tmp["median_diff"] > 0.1
         ),  # Checks if median of 30 days prior is greater/less than the median of 30 days later
         "MO",
         inplace=True,
@@ -113,18 +113,17 @@ def slope_diff_method(dataframe, band):
         inplace=True,
     )
     tmp["phenology"].mask(
-        (tmp["maxima"] == 1)
-        & (tmp["anomaly"] > 0.01)
-        & (dataframe["filtered"] <= 0.1)
-        & (tmp["median_diff"] > 0),
+        # (tmp["maxima"] == 1)
+        # (tmp["anomaly"] > 0.01)
+        (dataframe["filtered"] <= 0.05) & (tmp["median_diff"] > 0.1),
         "OW",
         inplace=True,
     )
     tmp["phenology"].mask(
         (tmp["minima"] == 1)
-        & (tmp["anomaly"] < -0.01)
+        & (tmp["anomaly"] < 0)
         & (dataframe["filtered"] <= 0.2)
-        & (tmp["median_diff"] < 0),
+        & (tmp["median_diff"] < -0.1),
         "FO",
         inplace=True,
     )
@@ -161,13 +160,27 @@ def main(args):
         sns.set_style("dark")
         fig, ax = plt.subplots(figsize=(20, 4))
 
-        p1 = sns.lineplot(
-            data=tmp, x="Date", y="filtered", color="grey", ax=ax, size=0.5
-        )
-        p2 = sns.scatterplot(
+        p1 = sns.scatterplot(
             data=tmp,
             x="Date",
             y=band,
+            color="white",
+            ax=ax,
+            legend=False,
+        )
+        p2 = sns.lineplot(
+            data=tmp,
+            x="Date",
+            y="filtered",
+            color="grey",
+            ax=ax,
+            size=0.5,
+            legend=False,
+        )
+        p3 = sns.scatterplot(
+            data=tmp,
+            x="Date",
+            y="filtered",
             hue="phenology",
             palette="tab10",
             size="marker",
