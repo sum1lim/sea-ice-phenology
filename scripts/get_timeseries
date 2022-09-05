@@ -83,13 +83,13 @@ def get_timeseries(lon, lat):
                         ]
 
         modis = (
-            ee.ImageCollection("MODIS/006/MOD09GQ")
+            ee.ImageCollection("MODIS/061/MOD09GQ")
             .filterDate(args.start_date, args.end_date)
             .select(["sur_refl_b01"], ["B1"])
             .getRegion(point, 0.1)
         )
         modis_qa = (
-            ee.ImageCollection("MODIS/006/MOD09GA")
+            ee.ImageCollection("MODIS/061/MOD09GA")
             .filterDate(args.start_date, args.end_date)
             .select("state_1km", "SolarZenith")
             .getRegion(point, 0.1)
