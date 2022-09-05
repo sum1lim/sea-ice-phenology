@@ -60,26 +60,48 @@ def get_timeseries(lon, lat):
     output_dict = {}
     for point in window:
 
-        landsat = (
+        landsat7 = (
+            ee.ImageCollection("LANDSAT/LE07/C02/T1_TOA")
+            .filterDate(args.start_date, args.end_date)
+            .select(["B3", "QA_PIXEL"], ["B1", "QA"])
+            .getRegion(point, 0.1)
+        )
+        landsat7_B1_dict, landsat7_qa_dict = id_pixel_dict(landsat7, ["B1", "QA"])
+
+        for k, v in landsat7_qa_dict.items():
+            cloud_qa = getQABits(v, 3, 3)
+            if cloud_qa == 0:
+                date = k.split("_")[-1]
+                if k in landsat7_B1_dict.keys():
+                    if f"{date[0:4]}-{date[4:6]}-{date[6:8]}" in output_dict.keys():
+                        output_dict[f"{date[0:4]}-{date[4:6]}-{date[6:8]}"] += [
+                            landsat7_B1_dict[k]
+                        ]
+                    else:
+                        output_dict[f"{date[0:4]}-{date[4:6]}-{date[6:8]}"] = [
+                            landsat7_B1_dict[k]
+                        ]
+
+        landsat8 = (
             ee.ImageCollection("LANDSAT/LC08/C02/T1_TOA")
             .filterDate(args.start_date, args.end_date)
             .select(["B4", "QA_PIXEL"], ["B1", "QA"])
             .getRegion(point, 0.1)
         )
-        landsat_B1_dict, landsat_qa_dict = id_pixel_dict(landsat, ["B1", "QA"])
+        landsat8_B1_dict, landsat8_qa_dict = id_pixel_dict(landsat8, ["B1", "QA"])
 
-        for k, v in landsat_qa_dict.items():
+        for k, v in landsat8_qa_dict.items():
             cloud_qa = getQABits(v, 3, 3)
             if cloud_qa == 0:
                 date = k.split("_")[-1]
-                if k in landsat_B1_dict.keys():
+                if k in landsat8_B1_dict.keys():
                     if f"{date[0:4]}-{date[4:6]}-{date[6:8]}" in output_dict.keys():
                         output_dict[f"{date[0:4]}-{date[4:6]}-{date[6:8]}"] += [
-                            landsat_B1_dict[k]
+                            landsat8_B1_dict[k]
                         ]
                     else:
                         output_dict[f"{date[0:4]}-{date[4:6]}-{date[6:8]}"] = [
-                            landsat_B1_dict[k]
+                            landsat8_B1_dict[k]
                         ]
 
         modis = (
