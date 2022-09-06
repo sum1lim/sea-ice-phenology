@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+import os
+import pandas as pd
+
+files = os.listdir("./communities/trend/")
+MO_df = pd.DataFrame()
+OW_df = pd.DataFrame()
+FO_df = pd.DataFrame()
+
+for f in files:
+    if f.endswith(".csv"):
+        df = pd.read_csv(f"./communities/trend/{f}")
+        community = f.split("/")[-1][:-10].replace("_", " ")
+
+        if MO_df.empty:
+            curr_MO = df[["Year", "MO"]].rename({"MO": community}, axis=1)
+            MO_df = curr_MO
+        else:
+            curr_MO = df[["Year", "MO"]].rename({"MO": community}, axis=1)
+            MO_df = pd.merge(MO_df, curr_MO, how="outer", on=["Year"])
+
+        if OW_df.empty:
+            curr_OW = df[["Year", "OW"]].rename({"OW": community}, axis=1)
+            OW_df = curr_OW
+        else:
+            curr_OW = df[["Year", "OW"]].rename({"OW": community}, axis=1)
+            OW_df = pd.merge(OW_df, curr_OW, how="outer", on=["Year"])
+
+        if FO_df.empty:
+            curr_FO = df[["Year", "FO"]].rename({"FO": community}, axis=1)
+            FO_df = curr_FO
+        else:
+            curr_FO = df[["Year", "FO"]].rename({"FO": community}, axis=1)
+            FO_df = pd.merge(FO_df, curr_FO, how="outer", on=["Year"])
+
+
+MO_df.to_csv("./communities/trend_summary/MO_trend_summary.csv", index=False)
+OW_df.to_csv("./communities/trend_summary/OW_trend_summary.csv", index=False)
+FO_df.to_csv("./communities/trend_summary/FO_trend_summary.csv", index=False)
