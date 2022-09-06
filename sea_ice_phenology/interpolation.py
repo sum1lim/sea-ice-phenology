@@ -23,7 +23,7 @@ def gaussian_weights(size, sigma):
 
 def iterative_interpolation(series, method):
     old_series = series.copy()
-    for subset_length in range(30):
+    for subset_length in range(10):
         new_series = {"system:time_start": [], "interpolated": []}
         if method == "random":
             weight_li = gaussian_weights(subset_length, 5)
