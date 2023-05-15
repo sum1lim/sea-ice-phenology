@@ -1,10 +1,8 @@
 #!/bin/bash
 
-#!/bin/bash
+authenticate
 for i in {2000..2022}
 do
-   authenticate
-
    mkdir ./data/"$i"
    mkdir ./data/"$i"/input
    get_timeseries --coords-csv ./CommunityList.csv Lon Lat Community --start-date "$i"-01-01 --end-date "$i"-12-31 --output ./data/"$i"/input
