@@ -28,7 +28,7 @@ def iterative_interpolation(series, method):
         if method == "random":
             weight_li = gaussian_weights(subset_length, 5)
 
-        for idx, item in enumerate(old_series.iteritems()):
+        for idx, item in enumerate(old_series.items()):
             start = idx - subset_length
             end = idx + subset_length + 1
 

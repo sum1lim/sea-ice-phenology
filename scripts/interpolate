@@ -11,6 +11,8 @@ from sea_ice_phenology.interpolation import (
     random_interpolation,
 )
 
+pd.options.mode.copy_on_write = True
+
 
 def main(args):
     if not os.path.isfile(args.input) or not args.input.endswith(".csv"):
@@ -65,6 +67,7 @@ def main(args):
         ts_df[f"{band}_interpolate"] = tmp[band]
 
     ts_df.to_csv(f"{args.output}/{filename}.csv")
+    plt.close()
 
 
 if __name__ == "__main__":

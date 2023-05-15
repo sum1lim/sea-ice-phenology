@@ -5,3 +5,4 @@ seaborn
 scikit-learn
 tk
 statsmodels
+matplotlib==3.7.0
