@@ -60,30 +60,32 @@ def get_timeseries(lon, lat):
     output_dict = {}
     for point in window:
 
-        landsat7 = (
-            ee.ImageCollection("LANDSAT/LE07/C02/T1_TOA")
+        # Landsat5
+        landsat5 = (
+            ee.ImageCollection("LANDSAT/LT05/C02/T1_L2")
             .filterDate(args.start_date, args.end_date)
             .select(["B3", "QA_PIXEL"], ["B1", "QA"])
             .getRegion(point, 0.1)
         )
-        landsat7_B1_dict, landsat7_qa_dict = id_pixel_dict(landsat7, ["B1", "QA"])
+        landsat5_B1_dict, landsat5_qa_dict = id_pixel_dict(landsat5, ["B1", "QA"])
 
-        for k, v in landsat7_qa_dict.items():
+        for k, v in landsat5_qa_dict.items():
             cloud_qa = getQABits(v, 3, 3)
             if cloud_qa == 0:
                 date = k.split("_")[-1]
-                if k in landsat7_B1_dict.keys():
+                if k in landsat5_B1_dict.keys():
                     if f"{date[0:4]}-{date[4:6]}-{date[6:8]}" in output_dict.keys():
                         output_dict[f"{date[0:4]}-{date[4:6]}-{date[6:8]}"] += [
-                            landsat7_B1_dict[k]
+                            landsat5_B1_dict[k]
                         ]
                     else:
                         output_dict[f"{date[0:4]}-{date[4:6]}-{date[6:8]}"] = [
-                            landsat7_B1_dict[k]
+                            landsat5_B1_dict[k]
                         ]
 
+        # Landsat8
         landsat8 = (
-            ee.ImageCollection("LANDSAT/LC08/C02/T1_TOA")
+            ee.ImageCollection("LANDSAT/LC08/C02/T1_L2")
             .filterDate(args.start_date, args.end_date)
             .select(["B4", "QA_PIXEL"], ["B1", "QA"])
             .getRegion(point, 0.1)
@@ -104,6 +106,7 @@ def get_timeseries(lon, lat):
                             landsat8_B1_dict[k]
                         ]
 
+        # MODIS
         modis = (
             ee.ImageCollection("MODIS/061/MOD09GQ")
             .filterDate(args.start_date, args.end_date)
@@ -130,6 +133,38 @@ def get_timeseries(lon, lat):
                         output_dict[k.replace("_", "-")] += [modis_B1_dict[k] / 10000]
                     else:
                         output_dict[k.replace("_", "-")] = [modis_B1_dict[k] / 10000]
+
+        # MODIS Aqua
+        modis_aqua = (
+            ee.ImageCollection("MODIS/061/MYD09GQ")
+            .filterDate(args.start_date, args.end_date)
+            .select(["sur_refl_b01"], ["B1"])
+            .getRegion(point, 0.1)
+        )
+        modis_aqua_qa = (
+            ee.ImageCollection("MODIS/061/MYD09GA")
+            .filterDate(args.start_date, args.end_date)
+            .select("state_1km", "SolarZenith")
+            .getRegion(point, 0.1)
+        )
+
+        modis_aqua_qa_dict, solar_dict = id_pixel_dict(
+            modis_aqua_qa, ["state_1km", "SolarZenith"]
+        )
+        modis_aqua_B1_dict = id_pixel_dict(modis_aqua, ["B1"])
+
+        for k, v in modis_aqua_qa_dict.items():
+            cloud_qa = getQABits(v, 0, 1)
+            if (cloud_qa == 0 or cloud_qa == 3) and solar_dict[k] <= 8600:
+                if k in modis_aqua_B1_dict.keys():
+                    if k.replace("_", "-") in output_dict.keys():
+                        output_dict[k.replace("_", "-")] += [
+                            modis_aqua_B1_dict[k] / 10000
+                        ]
+                    else:
+                        output_dict[k.replace("_", "-")] = [
+                            modis_aqua_B1_dict[k] / 10000
+                        ]
 
     return output_dict
 
