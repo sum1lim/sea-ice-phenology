@@ -163,7 +163,7 @@ Output: CSV file(s) and graph visualization
 | 2017-02-13        |                    | 0.7944333333333333 |
 | 2017-02-14        |                    | 0.8060799999999999 |
 
-![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Cambridge_Bay_interpolate.png)
+![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Cambridge_Bay_interpolate_2017.png)
 
 ### Phenology Detection
 Detects sea ice phenological indicators of MO, PO, PD, OW and FO. 1D-smoothing, Hampel and Lowess filtering on the time series data, is performed before the detection to enhance the performance.
@@ -216,7 +216,7 @@ Output: CSV file(s) and graph visualization
 | ...               | ...                | ...                | ...          |
 | 2017-10-16        | 0.2260666666666666 | 0.2260666666666666 | FO           |
 
-![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Cambridge_Bay_phenology.png)
+![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Cambridge_Bay_phenology_2017.png)
 
 ### Phenological Trend
 Calculates linear trends of annual phenological indicators detected.
@@ -237,10 +237,10 @@ $ trend --input [Path to input file] --output [Path to output directory]
 Example(s):
 ```
 # Single Input
-$ trend --input ./example/Cambridge_Bay_interpolate.csv --output ./example
+$ trend --input ./example/Cambridge_Bay_phenology.csv --output ./example
 
 # Multiple inputs
-$ trend --input ./example/Cambridge_Bay_interpolate.csv ./example/Alert_interpolate.csv --output ./example
+$ trend --input ./example/Cambridge_Bay_phenology.csv ./example/Alert_interpolate.csv --output ./example
 
 # Multiple inputs (Every file in a directory)
 $ trend --input ./example/* --output ./example
@@ -254,4 +254,5 @@ Output: CSV file(s) and graph visualization
 | 2020 | 151 | 221 |       |
 | 2021 | 151 | 219 |       |
 
-![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Cambridge_Bay_trend.png)
+![alt text](https://github.com/sum1lim/sea-ice-phenology/raw/master/example/Cambridge_Bay_trend.
+)
