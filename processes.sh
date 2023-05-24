@@ -1,18 +1,15 @@
 #!/bin/bash
 
 authenticate
-for i in {2000..2022}
-do
-   mkdir ./data/"$i"
-   mkdir ./data/"$i"/input
-   get_timeseries --coords-csv ./CommunityList.csv Lon Lat Community --start-date "$i"-01-01 --end-date "$i"-12-31 --output ./data/"$i"/input
 
-   mkdir ./data/"$i"/interpolate
-   interpolate --input ./data/"$i"/input/* --type median --output ./data/"$i"/interpolate --save-fig
+mkdir ./output/reflectance
+get_timeseries --coords-csv ./CommunityList.csv Lon_ice Lat_ice Community --start-date 2000-01-01 --end-date 2022-12-31 --output ./output/reflectance
 
-   mkdir ./data/"$i"/phenology
-   phenology --input ./data/"$i"/interpolate/* --type slope-diff --output ./data/"$i"/phenology --save-fig
+mkdir ./output/interpolate
+interpolate --input ./output/reflectance/* --type median --output ./output/interpolate  --save-fig
 
-   mkdir ./data/"$i"/trend
-   trend --input ./data/"$i"/phenology/* --output ./data/"$i"/trend --save-fig
-done
+mkdir ./output/phenology
+phenology --input ./output/interpolate/* --type slope-diff --output ./output/phenology  --save-fig
+
+mkdir ./output/trend
+trend --input ./output/phenology/* --output ./output/trend  --save-fig

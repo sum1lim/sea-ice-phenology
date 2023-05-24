@@ -16,67 +16,84 @@ def main(args):
         return
 
     df = pd.read_csv(args.input, thousands=",")
+    df.index = df["system:time_start"]
 
-    for phenology in df.columns:
-        trend_df = None
-        if phenology.endswith("phenology") == False:
-            continue
-        for k in ["MO", "OW", "FO"]:
-            trend = df.drop(df[df[phenology] != k].index).copy()
-            trend.index = pd.DatetimeIndex(trend["system:time_start"]).year
-            trend[k] = pd.to_datetime(
-                trend["system:time_start"], errors="coerce"
-            ).dt.dayofyear
-            if k in ["PO", "OW"]:
-                trend = trend.groupby(trend.index).first()
+    year_count = 0
+    for year in df.columns:
+        if year.endswith("phenology"):
+            tmp = df[[year]]
+            tmp.index = f"{year.split('_')[0]}-" + tmp.index
+            tmp = tmp.rename(columns={year: "phenology"})
+
+            if year_count == 0:
+                long_df = tmp
             else:
-                trend = trend.groupby(trend.index).last()
+                long_df = pd.concat([long_df, tmp])
 
-            trend[k] = interQuantileMask(trend[k], low="", high="").drop(
-                trend[trend[k] == ""].index
-            )
+            year_count += 1
 
-            if trend_df is None:
-                trend_df = pd.DataFrame(trend[k])
-            else:
-                trend_df = trend_df.join(trend[k], how="outer")
+    trend_df = None
+    for k in ["MO", "OW", "FO"]:
+        trend = long_df.drop(long_df[long_df["phenology"] != k].index).copy()
+        trend["system:time_start"] = trend.index
+        trend.index = pd.DatetimeIndex(trend["system:time_start"]).year
+        trend[k] = pd.to_datetime(
+            trend["system:time_start"], errors="coerce"
+        ).dt.dayofyear
 
-        sns.set_style("dark")
-        fig, ax = plt.subplots(figsize=(20, 4))
-
-        p = sns.regplot(
-            x=np.array(trend_df.index, dtype=float),
-            y=np.array(trend_df["MO"], dtype=float),
-            ax=ax,
-        )
-        p = sns.regplot(
-            x=np.array(trend_df.index, dtype=float),
-            y=np.array(trend_df["OW"], dtype=float),
-            ax=ax,
-        )
-        p = sns.regplot(
-            x=np.array(trend_df.index, dtype=float),
-            y=np.array(trend_df["FO"], dtype=float),
-            ax=ax,
-        )
-        p.set_xlabel("Year")
-        p.set_ylabel("DOY")
-
-        filename = f"{args.input.split('/')[-1].split('_phenology')[0]}_trend"
-        fig.canvas.manager.set_window_title(filename)
-
-        plt.grid()
-        if args.save_fig:
-            plt.savefig(f"{args.output}/{filename}.png")
+        if k in ["PO", "OW"]:
+            trend = trend.groupby(trend.index).first()
         else:
-            plt.show()
+            trend = trend.groupby(trend.index).last()
 
-        trend_df["Year"] = trend_df.index
-        trend_df = trend_df[["Year", "MO", "OW", "FO"]]
-        trend_df.to_csv(
-            f"{args.output}/{filename}.csv",
-            index=False,
+        trend[k] = interQuantileMask(trend[k], low="", high="").drop(
+            trend[trend[k] == ""].index
         )
+
+        if trend_df is None:
+            trend_df = pd.DataFrame(trend[k])
+        else:
+            trend_df = trend_df.join(trend[k], how="outer")
+
+    sns.set_style("dark")
+    fig, ax = plt.subplots(figsize=(20, 4))
+
+    trend_df = trend_df.replace("", np.nan)
+
+    p1 = sns.regplot(
+        x=np.array(trend_df.index, dtype=float),
+        y=np.array(trend_df["MO"], dtype=float),
+        label="MO",
+    )
+    p2 = sns.regplot(
+        x=np.array(trend_df.index, dtype=float),
+        y=np.array(trend_df["OW"], dtype=float),
+        label="OW",
+    )
+    p3 = sns.regplot(
+        x=np.array(trend_df.index, dtype=float),
+        y=np.array(trend_df["FO"], dtype=float),
+        label="FO",
+    )
+    plt.xlabel("Year")
+    plt.ylabel("DOY")
+    plt.legend()
+
+    filename = f"{args.input.split('/')[-1].split('_phenology')[0]}_trend"
+    fig.canvas.manager.set_window_title(filename)
+
+    plt.grid()
+    if args.save_fig:
+        plt.savefig(f"{args.output}/{filename}.png")
+    else:
+        plt.show()
+
+    trend_df["Year"] = trend_df.index
+    trend_df = trend_df[["Year", "MO", "OW", "FO"]]
+    trend_df.to_csv(
+        f"{args.output}/{filename}.csv",
+        index=False,
+    )
     plt.close()
 
 

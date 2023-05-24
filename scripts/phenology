@@ -15,9 +15,9 @@ pd.options.mode.chained_assignment = None
 lowess = sm.nonparametric.lowess
 
 
-def slope_diff_method(dataframe, band):
+def slope_diff_method(dataframe, year):
     # Hampel Filtering
-    sequence, _ = hampel_filter(dataframe[band], 10, n_sigmas=1)
+    sequence, _ = hampel_filter(dataframe[year], 10, n_sigmas=1)
     # Lowess Filtering
     sequence = pd.Series(
         lowess(
@@ -38,8 +38,10 @@ def slope_diff_method(dataframe, band):
     while idx < dataframe.shape[0]:
         left = sequence[idx - subset_length : idx].dropna()
         left.index = (left.index - sequence.index[idx]).days
+        left = left[left.index.notnull()]
         right = sequence[idx + 1 : idx + subset_length + 1].dropna()
         right.index = (right.index - sequence.index[idx]).days
+        right = right[right.index.notnull()]
 
         if (
             left.shape[0] > 2 * subset_length // 3
@@ -140,18 +142,21 @@ def main(args):
         return
 
     ts_df = pd.read_csv(args.input, thousands=",")
-    ts_df["system:time_start"] = pd.to_datetime(ts_df["system:time_start"])
+    # ts_df["system:time_start"] = pd.to_datetime(ts_df["system:time_start"])
     ts_df = ts_df.groupby("system:time_start").mean()
 
     filename = f"{args.input.split('/')[-1].split('_interpolate')[0]}_phenology"
-    for band in ts_df.columns:
-        if band.endswith("interpolate") == False:
+    for year in ts_df.columns:
+        if year.endswith("interpolate") == False:
             continue
 
         tmp = ts_df.copy()
+        tmp.index = pd.to_datetime(
+            year.split("_interpolate")[0] + "-" + tmp.index, errors="coerce"
+        )
         tmp["Date"] = tmp.index
 
-        tmp = slope_diff_method(tmp, band)
+        tmp = slope_diff_method(tmp, year)
 
         # Maker for plotting
         tmp["marker"] = tmp["phenology"].copy()
@@ -163,7 +168,7 @@ def main(args):
         p1 = sns.scatterplot(
             data=tmp,
             x="Date",
-            y=band,
+            y=year,
             color="white",
             ax=ax,
             legend=False,
@@ -187,19 +192,24 @@ def main(args):
             sizes=(30, 5),
             ax=ax,
         )
+        plt.xlabel("Date")
+        plt.ylabel("Reflectance")
         fig.canvas.manager.set_window_title(filename)
 
         plt.grid()
         if args.save_fig:
-            plt.savefig(f"{args.output}/{filename}.png")
+            plt.savefig(f"{args.output}/{filename}_{year.split('_interpolate')[0]}.png")
         else:
             plt.show()
 
-        ts_df[f"{band.split('_interpolate')[0]}_phenology"] = tmp["phenology"]
+        tmp.index = tmp.index.strftime("%m-%d")
+        ts_df[f"{year.split('_interpolate')[0]}_phenology"] = tmp["phenology"]
+
+        plt.close()
 
     print(f"Saving to {args.output}/{filename}.csv")
     ts_df.to_csv(f"{args.output}/{filename}.csv")
-    plt.close()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

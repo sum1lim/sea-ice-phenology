@@ -179,22 +179,58 @@ def main(args):
                 row[args.coords_csv[1]], row[args.coords_csv[2]]
             )
 
-            with open(
-                f"{args.output}/{row[args.coords_csv[3]].replace(' ', '_')}.csv", "w"
-            ) as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(["system:time_start", "B1"])
-                for k in sorted(output_dict.keys()):
-                    writer.writerow([k, mean(output_dict[k])])
+            for k in sorted(output_dict.keys()):
+                output_dict[k] = mean(output_dict[k])
+
+            df = pd.DataFrame.from_dict(output_dict, orient="index", columns=["B1"])
+            idx = pd.date_range(args.start_date, args.end_date)
+            df.index = pd.DatetimeIndex(df.index)
+            df = df.reindex(idx, fill_value=None)
+            df.index.name = "system:time_start"
+            df["Year"] = df.index.year
+
+            year_count = 0
+            for year in df["Year"].unique():
+                tmp_df = df[df["Year"] == year]
+                tmp_df = tmp_df.drop(["Year"], axis=1)
+                tmp_df.index = tmp_df.index.strftime("%m-%d")
+                tmp_df.rename(columns={"B1": year}, inplace=True)
+                if year_count == 0:
+                    new_df = tmp_df
+                else:
+                    new_df = new_df.join(tmp_df, how="outer")
+                year_count += 1
+
+            new_df.to_csv(
+                f"{args.output}/{row[args.coords_csv[3]].replace(' ', '_')}.csv"
+            )
 
     elif args.coords:
         output_dict = get_timeseries(args.coords[0], args.coords[1])
 
-        with open(f"{args.output}", "w") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(["system:time_start", "B1"])
-            for k in sorted(output_dict.keys()):
-                writer.writerow([k, mean(output_dict[k])])
+        for k in sorted(output_dict.keys()):
+            output_dict[k] = mean(output_dict[k])
+
+        df = pd.DataFrame.from_dict(output_dict, orient="index", columns=["B1"])
+        idx = pd.date_range(args.start_date, args.end_date)
+        df.index = pd.DatetimeIndex(df.index)
+        df = df.reindex(idx, fill_value="NaN")
+        df.index.name = "system:time_start"
+        df["Year"] = df.index.year
+
+        year_count = 0
+        for year in df["Year"].unique():
+            tmp_df = df[df["Year"] == year]
+            tmp_df = tmp_df.drop(["Year"], axis=1)
+            tmp_df.index = tmp_df.index.strftime("%m-%d")
+            tmp_df.rename(columns={"B1": year}, inplace=True)
+            if year_count == 0:
+                new_df = tmp_df
+            else:
+                new_df = new_df.join(tmp_df, how="outer")
+            year_count += 1
+
+        new_df.to_csv(f"{args.output}")
 
 
 if __name__ == "__main__":

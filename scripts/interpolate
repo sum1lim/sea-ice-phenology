@@ -19,55 +19,64 @@ def main(args):
         return
 
     ts_df = pd.read_csv(args.input, thousands=",")
-    ts_df["system:time_start"] = pd.to_datetime(ts_df["system:time_start"])
+    # ts_df["system:time_start"] = pd.to_datetime(ts_df["system:time_start"])
     ts_df = ts_df.groupby("system:time_start").mean()
-    ts_df = ts_df.asfreq("D")
+    # ts_df = ts_df.asfreq("D")
 
-    for band in ts_df.columns:
-        first_valid = ts_df[band][ts_df[band].notnull()].index[0]
-        last_valid = ts_df[band][ts_df[band].notnull()].index[-1]
+    for year in ts_df.columns:
+        first_valid = ts_df[year][ts_df[year].notnull()].index[0]
+        last_valid = ts_df[year][ts_df[year].notnull()].index[-1]
         tmp = ts_df.loc[first_valid:last_valid].copy()
         tmp["Date"] = tmp.index
-        tmp["mask"] = tmp[band].isnull()
-        tmp["mask"].mask(tmp["mask"] == True, "Interpolated", inplace=True)
-        tmp["mask"].mask(tmp["mask"] == False, "Original", inplace=True)
+        tmp["Interpolated"] = tmp[year].isnull()
+        tmp["Interpolated"].mask(
+            tmp["Interpolated"] == True, "Interpolated", inplace=True
+        )
+        tmp["Interpolated"].mask(tmp["Interpolated"] == False, "Original", inplace=True)
 
         if args.type == "linear":
-            tmp[band] = tmp[band].interpolate(
+            tmp[year] = tmp[year].interpolate(
                 "linear", limit_direction="both", limit_area="inside", limit=3
             )
         if args.type == "slinear":
-            tmp[band] = tmp[band].interpolate(
+            tmp[year] = tmp[year].interpolate(
                 "slinear", limit_direction="both", limit_area="inside", limit=3
             )
         if args.type == "median":
-            tmp[band] = median_interpolation(tmp[band])
+            tmp[year] = median_interpolation(tmp[year])
 
         if args.type == "gaussian":
-            tmp[band] = gaussian_interpolation(tmp[band])
+            tmp[year] = gaussian_interpolation(tmp[year])
 
         if args.type == "random":
-            tmp[band] = random_interpolation(tmp[band])
+            tmp[year] = random_interpolation(tmp[year])
 
-        tmp[band] = interQuantileMask(tmp[band], low="", high="")
+        tmp[year] = interQuantileMask(tmp[year], low="", high="")
 
         sns.set_style("dark")
         fig, ax = plt.subplots(figsize=(20, 4))
-        tmp = tmp.drop(tmp[tmp[band] == ""].index)
-        sns.scatterplot(data=tmp, x="Date", y=band, hue="mask", style="mask", s=5)
+        tmp = tmp.drop(tmp[tmp[year] == ""].index)
+        tmp["Date"] = pd.to_datetime(year + "-" + tmp["Date"], errors="coerce")
+        sns.scatterplot(
+            data=tmp, x="Date", y=year, hue="Interpolated", style="Interpolated", s=10
+        )
+        plt.xlabel("Date")
+        plt.ylabel("Reflectance")
+
         filename = f"{'.'.join(args.input.split('/')[-1].split('.')[:-1])}_interpolate"
         fig.canvas.manager.set_window_title(filename)
 
         plt.grid()
         if args.save_fig:
-            plt.savefig(f"{args.output}/{filename}.png")
+            plt.savefig(f"{args.output}/{filename}_{year}.png")
         else:
             plt.show()
 
-        ts_df[f"{band}_interpolate"] = tmp[band]
+        ts_df[f"{year}_interpolate"] = tmp[year]
+
+        plt.close()
 
     ts_df.to_csv(f"{args.output}/{filename}.csv")
-    plt.close()
 
 
 if __name__ == "__main__":
