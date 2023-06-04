@@ -24,6 +24,7 @@ def gaussian_weights(size, sigma):
 def iterative_interpolation(series, method):
     old_series = series.copy()
     for subset_length in range(10):
+        subset_length += 1
         new_series = {"system:time_start": [], "interpolated": []}
         if method == "random":
             weight_li = gaussian_weights(subset_length, 5)
@@ -48,7 +49,7 @@ def iterative_interpolation(series, method):
                 and min(left_len, right_len) / max(left_len, right_len) >= 0.5
             ):
                 new_series["system:time_start"].append(timestamp)
-                if (idx % 2) == 0:
+                if (subset_length % 2) == 0:
                     if method == "median":
                         new_series["interpolated"].append(
                             old_series[start:end].median()
@@ -60,7 +61,7 @@ def iterative_interpolation(series, method):
                     else:
                         print("Interpolation method not found", file=sys.stderr)
                         exit(1)
-                if (idx % 2) == 1:
+                if (subset_length % 2) == 1:
                     # mean interpolation once every two iterations for variability
                     new_series["interpolated"].append(old_series[start:end].mean())
             else:
